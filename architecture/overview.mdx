@@ -1,0 +1,751 @@
+---
+title: 'Architecture Overview'
+description: 'Comprehensive guide to HuelvaPedia app architecture, including Activities, data flow, Firebase integration, and Material Design patterns'
+icon: 'diagram-project'
+---
+
+## Introduction
+
+HuelvaPedia follows a traditional Android architecture pattern built around Activities, RecyclerViews, and Firebase Realtime Database. The app uses a hierarchical navigation structure with a splash screen, main listing, and detailed views.
+
+<CardGroup cols={2}>
+  <Card title="Activities" icon="window">
+    Three main activities handle all user interactions
+  </Card>
+  <Card title="Firebase Integration" icon="database">
+    Real-time data synchronization from Firebase
+  </Card>
+  <Card title="RecyclerView Pattern" icon="list">
+    Efficient list rendering with custom adapter
+  </Card>
+  <Card title="Material Design" icon="palette">
+    Modern UI with Material Components
+  </Card>
+</CardGroup>
+
+## Application Flow
+
+The app follows a linear navigation flow with hierarchical data browsing:
+
+<Steps>
+  <Step title="Splash Screen">
+    `PantallaCarga` checks network connectivity and displays animated branding before proceeding
+  </Step>
+  <Step title="Main Categories">
+    `MainActivity` displays the primary categories (monuments, beaches, restaurants, etc.) from Firebase
+  </Step>
+  <Step title="Subcategories">
+    `Secundaria` shows items within a selected category, fetched dynamically from Firebase
+  </Step>
+  <Step title="Weather Feature">
+    `Tiempo` provides current weather information for Huelva via OpenWeatherMap API
+  </Step>
+</Steps>
+
+## Activity Architecture
+
+### PantallaCarga (Splash Screen)
+
+The entry point activity that ensures the app has network connectivity before proceeding.
+
+<CodeGroup>
+```java PantallaCarga.java:85-107
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    setContentView(R.layout.activity_pantalla_carga);
+    getSupportActionBar().hide();
+
+    animacionSuperior = AnimationUtils.loadAnimation(this, R.anim.top_animation);
+    animacionInferior = AnimationUtils.loadAnimation(this, R.anim.bottom_animation);
+
+    imagenLogo = findViewById(R.id.imagenlogo);
+    textoCarga = findViewById(R.id.textocarga);
+    sloganCarga = findViewById(R.id.slogancarga);
+    progressBar = findViewById(R.id.progressBar);
+
+    progressBar.getIndeterminateDrawable().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+
+    imagenLogo.setAnimation(animacionSuperior);
+    textoCarga.setAnimation(animacionInferior);
+    sloganCarga.setAnimation(animacionInferior);
+    progressBar.setAnimation(animacionInferior);
+
+    checkConnectivity();
+}
+```
+
+```java Connectivity Check:62-82
+private void checkConnectivity()
+{
+    final ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    final NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+
+    hayConexion = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+
+    if (hayConexion)
+    {
+        handler.postDelayed(navegarAPrincipal, DURACION_CARGA);
+    }
+    else
+    {
+        Toast.makeText(PantallaCarga.this, "SE DEBE DISPONER DE CONEXIÓN A INTERNET", Toast.LENGTH_LONG).show();
+        connectivityManager.registerNetworkCallback(
+                new NetworkRequest.Builder()
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .build(), connectivityCallback);
+        monitorizando = true;
+    }
+}
+```
+</CodeGroup>
+
+**Key Features:**
+- Network connectivity validation with `ConnectivityManager`
+- Animated entrance with top and bottom animations
+- 5-second splash duration before navigation
+- Network callback registration for offline scenarios
+- Proper lifecycle cleanup in `onDestroy()` to prevent memory leaks
+
+### MainActivity (Primary Categories)
+
+The main landing screen displaying top-level categories from Firebase.
+
+```java MainActivity.java:32-76
+@Override
+protected void onCreate(Bundle savedInstanceState)
+{
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    botonTiempo = findViewById(R.id.botontiempo);
+
+    ActionBar actionBar = getSupportActionBar();
+    actionBar.setIcon(R.mipmap.ic_escudohuelva);
+    actionBar.setDisplayShowHomeEnabled(true);
+
+    recyclerView = findViewById(R.id.recicler);
+    recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+    listaElementos = new ArrayList<>();
+
+    reference = FirebaseDatabase.getInstance().getReference().child("principal");
+
+    reference.addValueEventListener(new ValueEventListener()
+    {
+        @Override
+        public void onDataChange(@NonNull DataSnapshot snapshot)
+        {
+            listaElementos.clear(); // Evita duplicación de datos cuando Firebase notifica cambios
+            for (DataSnapshot dataSnapshot : snapshot.getChildren())
+            {
+                Elementos elemento = dataSnapshot.getValue(Elementos.class);
+                listaElementos.add(elemento);
+            }
+            adaptador = new Adaptador(MainActivity.this, listaElementos);
+            recyclerView.setAdapter(adaptador);
+        }
+
+        @Override
+        public void onCancelled(@NonNull DatabaseError error)
+        {
+            Toast.makeText(MainActivity.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+        }
+    });
+
+    botonTiempo.setOnClickListener(v -> {
+        Intent intent = new Intent(v.getContext(), Tiempo.class);
+        startActivity(intent);
+    });
+}
+```
+
+**Architecture Components:**
+- **RecyclerView** with `LinearLayoutManager` for efficient scrolling
+- **Firebase ValueEventListener** for real-time data synchronization
+- **Custom Adapter** (`Adaptador`) to bind data to views
+- **ActionBar** customization with Huelva coat of arms icon
+- **Weather Button** for navigating to weather information
+
+### Secundaria (Subcategory View)
+
+Displays items within a selected category, sharing the same layout as MainActivity but with dynamic Firebase references.
+
+```java Secundaria.java:32-78
+@Override
+protected void onCreate(Bundle savedInstanceState)
+{
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    botonTiempo = findViewById(R.id.botontiempo);
+    botonTiempo.setVisibility(View.GONE); // Oculta el botón del tiempo en los subtemas
+
+    ActionBar actionBar = getSupportActionBar();
+    actionBar.setIcon(R.mipmap.ic_escudohuelva);
+    actionBar.setDisplayShowHomeEnabled(true);
+
+    recyclerView = findViewById(R.id.recicler);
+    recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+    listaElementos = new ArrayList<>();
+
+    // Recibe el nombre del tema anterior y lo normaliza para buscar su referencia en Firebase
+    Intent intent = getIntent();
+    String nombreReferencia = intent.getStringExtra("Nombre")
+            .replace(" ", "")
+            .toLowerCase();
+
+    reference = FirebaseDatabase.getInstance().getReference().child(nombreReferencia);
+
+    reference.addValueEventListener(new ValueEventListener()
+    {
+        @Override
+        public void onDataChange(@NonNull DataSnapshot snapshot)
+        {
+            listaElementos.clear(); // Evita duplicación de datos cuando Firebase notifica cambios
+            for (DataSnapshot dataSnapshot : snapshot.getChildren())
+            {
+                Elementos elemento = dataSnapshot.getValue(Elementos.class);
+                listaElementos.add(elemento);
+            }
+            adaptador = new Adaptador(Secundaria.this, listaElementos);
+            recyclerView.setAdapter(adaptAdapter);
+        }
+
+        @Override
+        public void onCancelled(@NonNull DatabaseError error)
+        {
+            Toast.makeText(Secundaria.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+        }
+    });
+}
+```
+
+**Key Differences from MainActivity:**
+- Receives category name via Intent extras
+- Normalizes category name (removes spaces, converts to lowercase) for Firebase path
+- Hides weather button for cleaner subcategory navigation
+- Uses same layout (`activity_main.xml`) for consistency
+
+### Tiempo (Weather Activity)
+
+Fetches and displays current weather data for Huelva using OpenWeatherMap API.
+
+```java Tiempo.java:35-92
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_tiempo);
+
+    tvTemperatura = findViewById(R.id.temperatura);
+    tvDescripcion = findViewById(R.id.descripcion);
+    tvSensacion = findViewById(R.id.sensacion);
+    tvPresion = findViewById(R.id.presion);
+    tvHumedad = findViewById(R.id.humedad);
+    tvNubes = findViewById(R.id.nubes);
+    tvViento = findViewById(R.id.viento);
+
+    imagenDelTiempo = findViewById(R.id.imagentiempo);
+
+    ActionBar actionBar = getSupportActionBar();
+    actionBar.setIcon(R.mipmap.ic_escudohuelva);
+    actionBar.setDisplayShowHomeEnabled(true);
+
+    String urlCompleta = URL_BASE + "?q=Huelva,ES&appid=" + API_KEY;
+
+    StringRequest stringRequest = new StringRequest(Request.Method.POST, urlCompleta,
+            response -> {
+                try
+                {
+                    JSONObject jsonResponse = new JSONObject(response);
+                    JSONArray jsonArray = jsonResponse.getJSONArray("weather");
+                    JSONObject jsonObjectWeather = jsonArray.getJSONObject(0);
+                    String descripcion = jsonObjectWeather.getString("description");
+                    JSONObject jsonObjectMain = jsonResponse.getJSONObject("main");
+                    double temp = jsonObjectMain.getDouble("temp") - 273.15;
+                    double sensacion = jsonObjectMain.getDouble("feels_like") - 273.15;
+                    float presion = jsonObjectMain.getInt("pressure");
+                    int humedad = jsonObjectMain.getInt("humidity");
+                    JSONObject jsonObjectWind = jsonResponse.getJSONObject("wind");
+                    String viento = jsonObjectWind.getString("speed");
+                    JSONObject jsonObjectClouds = jsonResponse.getJSONObject("clouds");
+                    String nubes = jsonObjectClouds.getString("all");
+
+                    traducirDescripcion(descripcion);
+
+                    tvTemperatura.setText(formatoDecimal.format(temp) + "ºC");
+                    tvSensacion.setText("Sensacion térmica: " + formatoDecimal.format(sensacion) + "ºC");
+                    tvHumedad.setText("Humedad: " + humedad + "%");
+                    tvNubes.setText("Cantidad de nubes: " + nubes + "%");
+                    tvViento.setText("Velocidad del viento: " + viento + "m/s (metros por segundo)");
+                    tvPresion.setText("Presión atmosférica: " + presion + " hPa");
+                }
+                catch (JSONException e)
+                {
+                    e.printStackTrace();
+                }
+            },
+            error -> Toast.makeText(getApplicationContext(), error.toString().trim(), Toast.LENGTH_SHORT).show()
+    );
+
+    RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+    requestQueue.add(stringRequest);
+}
+```
+
+**Features:**
+- Uses **Volley** library for HTTP networking
+- Parses JSON weather data from OpenWeatherMap
+- Converts Kelvin temperatures to Celsius
+- Translates English descriptions to Spanish
+- Sets weather icons based on conditions
+
+<Warning>
+  The API key is currently hardcoded in `Tiempo.java:27`. Consider moving it to `local.properties` and accessing via `BuildConfig` to prevent exposure in version control.
+</Warning>
+
+## RecyclerView Pattern
+
+HuelvaPedia uses the standard RecyclerView pattern with a custom adapter to display lists of encyclopedia entries.
+
+### Adapter Implementation
+
+The `Adaptador` class manages the binding of `Elementos` data to the RecyclerView items.
+
+```java Adaptador.java:32-39
+@NonNull
+@Override
+public MiViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
+{
+   View view = LayoutInflater.from(context).inflate(R.layout.principal, parent, false);
+   view.setOnClickListener(this);
+   return new MiViewHolder(view);
+}
+```
+
+### ViewHolder Pattern
+
+```java Adaptador.java:135-152
+static class MiViewHolder extends RecyclerView.ViewHolder
+{
+    TextView nombre, descripcion;
+    ImageView imagen;
+    Button botonUbicacion, botonLlamar, botonEnlace;
+
+    public MiViewHolder(@NonNull View itemView)
+    {
+        super(itemView);
+
+        nombre = itemView.findViewById(R.id.tenombre);
+        descripcion = itemView.findViewById(R.id.tedescri);
+        imagen = itemView.findViewById(R.id.imagen);
+        botonUbicacion = itemView.findViewById(R.id.botonubi);
+        botonLlamar = itemView.findViewById(R.id.botonllamar);
+        botonEnlace = itemView.findViewById(R.id.botonwiki);
+    }
+}
+```
+
+### Dynamic UI Rendering
+
+The adapter intelligently shows/hides action buttons based on the `ultimo` flag:
+
+```java Adaptador.java:54-68
+if (!elemento.getUltimo()) // Si no es el último, se navega a la Activity Secundaria
+{
+    holder.botonUbicacion.setVisibility(View.GONE);
+    holder.botonLlamar.setVisibility(View.GONE);
+    holder.botonEnlace.setVisibility(View.GONE);
+
+    if (!tieneUbicacion && !tieneTelefono && !tieneEnlace)
+    {
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), Secundaria.class);
+            intent.putExtra("Nombre", elemento.getNombre());
+            v.getContext().startActivity(intent);
+        });
+    }
+}
+```
+
+<Info>
+  Items marked as **not last** (`ultimo = false`) navigate to `Secundaria` to show subcategories. Items marked as **last** (`ultimo = true`) display action buttons (map, call, web link) instead.
+</Info>
+
+## Firebase Integration
+
+### Database Structure
+
+HuelvaPedia uses Firebase Realtime Database with a hierarchical structure:
+
+```
+root/
+├── principal/
+│   ├── item1 (Elementos)
+│   ├── item2 (Elementos)
+│   └── ...
+├── playas/
+│   ├── beach1 (Elementos)
+│   └── beach2 (Elementos)
+├── monumentos/
+│   ├── monument1 (Elementos)
+│   └── monument2 (Elementos)
+└── [other categories]/
+```
+
+### Real-time Synchronization
+
+Both `MainActivity` and `Secundaria` use `ValueEventListener` for real-time updates:
+
+```java MainActivity.java:50-70
+reference.addValueEventListener(new ValueEventListener()
+{
+    @Override
+    public void onDataChange(@NonNull DataSnapshot snapshot)
+    {
+        listaElementos.clear(); // Evita duplicación de datos cuando Firebase notifica cambios
+        for (DataSnapshot dataSnapshot : snapshot.getChildren())
+        {
+            Elementos elemento = dataSnapshot.getValue(Elementos.class);
+            listaElementos.add(elemento);
+        }
+        adaptador = new Adaptador(MainActivity.this, listaElementos);
+        recyclerView.setAdapter(adaptador);
+    }
+
+    @Override
+    public void onCancelled(@NonNull DatabaseError error)
+    {
+        Toast.makeText(MainActivity.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+    }
+});
+```
+
+**Benefits:**
+- Automatic UI updates when Firebase data changes
+- No manual refresh required
+- Clear operation prevents duplicate entries on data change events
+
+### Data Deserialization
+
+Firebase automatically deserializes JSON data into `Elementos` objects:
+
+```java
+Elementos elemento = dataSnapshot.getValue(Elementos.class);
+```
+
+This requires the `Elementos` class to have:
+- An empty constructor
+- Getter/setter methods matching Firebase field names
+
+## Material Design Implementation
+
+### Components Used
+
+<Tabs>
+  <Tab title="RecyclerView">
+    Efficient scrolling lists with view recycling for performance:
+    ```xml activity_main.xml:10-14
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recicler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/fondo_huelva1" />
+    ```
+  </Tab>
+  <Tab title="CardView">
+    Elevated cards for description text with rounded corners:
+    ```xml principal.xml:45-68
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/fondoredondeado"
+        android:layout_marginTop="5dp"
+        app:cardCornerRadius="15dp"
+        app:cardElevation="0dp">
+
+        <TextView
+            android:id="@+id/tedescri"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Descripcion"
+            android:textAlignment="center" />
+    </androidx.cardview.widget.CardView>
+    ```
+  </Tab>
+  <Tab title="Material Buttons">
+    Styled buttons with icons, strokes, and rounded corners:
+    ```xml principal.xml:70-88
+    <Button
+        android:id="@+id/botonubi"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:text="Ver ubicación"
+        app:cornerRadius="20dp"
+        app:icon="@android:drawable/ic_dialog_map"
+        app:strokeColor="#FFFFFF"
+        app:strokeWidth="2dp" />
+    ```
+  </Tab>
+  <Tab title="Custom Fonts">
+    Baloo font family for consistent branding:
+    ```xml
+    android:fontFamily="@font/baloo"
+    ```
+  </Tab>
+</Tabs>
+
+### Theming
+
+The app uses custom colors defined in `colors.xml` and applies Material themes:
+
+```xml activity_main.xml:16-33
+<Button
+    android:id="@+id/botontiempo"
+    style="@style/Widget.MaterialComponents.Button"
+    android:layout_width="match_parent"
+    android:layout_height="70dp"
+    android:text="Tiempo en Huelva"
+    app:icon="@drawable/tiempo"
+    app:strokeColor="#FFFFFF"
+    app:strokeWidth="2dp" />
+```
+
+## Data Flow Diagram
+
+```
+┌─────────────────┐
+│ PantallaCarga   │ Check connectivity
+│  (Splash)       │ ─────────────┐
+└─────────────────┘               │
+        │                         ▼
+        │ Navigate if connected   │
+        ▼                         │
+┌─────────────────┐               │
+│  MainActivity   │◄──────────────┘
+│  (Categories)   │
+└─────────────────┘
+        │
+        │ Firebase: "principal"
+        ▼
+┌─────────────────┐
+│  RecyclerView   │
+│  + Adaptador    │
+└─────────────────┘
+        │
+        ├─── Click category (ultimo=false) ───┐
+        │                                     │
+        │                                     ▼
+        │                            ┌─────────────────┐
+        │                            │   Secundaria    │
+        │                            │ (Subcategories) │
+        │                            └─────────────────┘
+        │                                     │
+        │                                     │ Firebase: normalized category name
+        │                                     ▼
+        │                            ┌─────────────────┐
+        │                            │  RecyclerView   │
+        │                            │  + Adaptador    │
+        │                            └─────────────────┘
+        │                                     │
+        │                                     │
+        ├─── Click detail (ultimo=true) ─────┤
+        │                                     │
+        ▼                                     ▼
+┌─────────────────┐              ┌─────────────────────┐
+│ Action Buttons  │              │  Action Buttons     │
+│ - Map           │              │  - Map              │
+│ - Call          │              │  - Call             │
+│ - Web Link      │              │  - Web Link         │
+└─────────────────┘              └─────────────────────┘
+        │
+        └─── Weather Button (MainActivity only)
+                    │
+                    ▼
+           ┌─────────────────┐
+           │     Tiempo      │
+           │   (Weather)     │
+           └─────────────────┘
+                    │
+                    │ HTTP Request
+                    ▼
+           ┌─────────────────┐
+           │ OpenWeatherMap  │
+           │      API        │
+           └─────────────────┘
+```
+
+## Navigation Pattern
+
+HuelvaPedia uses **explicit Intent-based navigation**:
+
+<CodeGroup>
+```java Navigate to Secundaria:62-66
+holder.itemView.setOnClickListener(v -> {
+    Intent intent = new Intent(v.getContext(), Secundaria.class);
+    intent.putExtra("Nombre", elemento.getNombre());
+    v.getContext().startActivity(intent);
+});
+```
+
+```java Navigate to Tiempo:72-75
+botonTiempo.setOnClickListener(v -> {
+    Intent intent = new Intent(v.getContext(), Tiempo.class);
+    startActivity(intent);
+});
+```
+
+```java Open Map:74-79
+holder.botonUbicacion.setOnClickListener(v -> {
+    Intent intent = new Intent(Intent.ACTION_VIEW);
+    intent.setData(Uri.parse(elemento.getUbicacion1() + Uri.encode(elemento.getUbicacion2())));
+    Intent chooser = Intent.createChooser(intent, "Launch Maps");
+    v.getContext().startActivity(chooser);
+});
+```
+
+```java Dial Phone:89-93
+holder.botonLlamar.setOnClickListener(v -> {
+    Intent intent = new Intent(Intent.ACTION_DIAL);
+    intent.setData(Uri.parse("tel:" + elemento.getTelefono()));
+    v.getContext().startActivity(intent);
+});
+```
+
+```java Open Web Link:103-107
+holder.botonEnlace.setOnClickListener(v -> {
+    Uri link = Uri.parse(elemento.getEnlace());
+    Intent intent = new Intent(Intent.ACTION_VIEW, link);
+    v.getContext().startActivity(intent);
+});
+```
+</CodeGroup>
+
+## Third-Party Libraries
+
+HuelvaPedia leverages several Android libraries:
+
+| Library | Purpose | Usage |
+|---------|---------|-------|
+| **Firebase Realtime Database** | Backend data storage | Real-time encyclopedia content synchronization |
+| **Picasso** | Image loading | Asynchronous image loading and caching for `Elementos` photos |
+| **Volley** | HTTP networking | Fetching weather data from OpenWeatherMap API |
+| **Material Components** | UI components | Buttons, CardView, and styling |
+| **RecyclerView** | List rendering | Efficient scrollable lists in MainActivity and Secundaria |
+
+### Picasso Integration
+
+```java Adaptador.java:48
+Picasso.get().load(elemento.getFoto()).into(holder.imagen);
+```
+
+Picasso handles:
+- Asynchronous image downloading
+- Image caching (memory and disk)
+- Placeholder and error images
+- Automatic sizing and scaling
+
+## Lifecycle Management
+
+### Memory Leak Prevention
+
+```java PantallaCarga.java:120-124
+@Override
+protected void onDestroy() {
+    handler.removeCallbacksAndMessages(null); // Cancela callbacks pendientes para evitar memory leaks
+    super.onDestroy();
+}
+```
+
+### Network Callback Cleanup
+
+```java PantallaCarga.java:109-118
+@Override
+protected void onPause() {
+    if (monitorizando) {
+        final ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        connectivityManager.unregisterNetworkCallback(connectivityCallback);
+        monitorizando = false;
+    }
+    super.onPause();
+}
+```
+
+<Tip>
+  Proper lifecycle management prevents memory leaks by cleaning up handlers, callbacks, and listeners when activities are paused or destroyed.
+</Tip>
+
+## Best Practices Implemented
+
+<CardGroup cols={2}>
+  <Card title="Firebase List Clearing" icon="broom">
+    `listaElementos.clear()` prevents duplicate entries when Firebase sends update notifications
+  </Card>
+  <Card title="ViewHolder Pattern" icon="recycle">
+    RecyclerView reuses view holders for better performance and reduced memory usage
+  </Card>
+  <Card title="Network Validation" icon="wifi">
+    Splash screen ensures connectivity before loading data-dependent screens
+  </Card>
+  <Card title="Conditional UI" icon="toggle-on">
+    Buttons shown/hidden based on data availability (`tieneUbicacion`, `tieneTelefono`, etc.)
+  </Card>
+  <Card title="Intent Chooser" icon="share-nodes">
+    Map and phone intents use choosers, allowing users to select their preferred app
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation">
+    Toast messages inform users of Firebase errors and network issues
+  </Card>
+</CardGroup>
+
+## Performance Considerations
+
+### RecyclerView Optimization
+
+- **LinearLayoutManager** provides smooth vertical scrolling
+- **ViewHolder pattern** minimizes findViewById() calls
+- **Item view recycling** reduces memory allocations
+
+### Image Loading
+
+Picasso handles image optimization:
+- Downloads images asynchronously (no UI blocking)
+- Caches images in memory and disk
+- Automatically scales images to fit ImageView dimensions
+
+### Firebase Efficiency
+
+- **ValueEventListener** receives only data changes (not full re-syncs)
+- Data automatically serialized/deserialized into Java objects
+- Firebase SDK handles connection pooling and retry logic
+
+## Security Considerations
+
+<Warning>
+  **API Key Exposure**: The OpenWeatherMap API key is currently hardcoded in `Tiempo.java`. Move sensitive keys to `local.properties` or use Android's BuildConfig to keep them out of version control.
+</Warning>
+
+<Info>
+  **Firebase Security Rules**: Ensure Firebase Realtime Database rules properly restrict read/write access. Since this is a read-only encyclopedia app, Firebase rules should allow public reads but restrict writes to authenticated admin users only.
+</Info>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Model" icon="database" href="/architecture/data-model">
+    Learn about the Elementos class structure and database schema
+  </Card>
+  <Card title="Firebase Setup" icon="fire" href="/development/firebase-setup">
+    Configure Firebase for your HuelvaPedia instance
+  </Card>
+  <Card title="Core Features" icon="star" href="/features/navigation">
+    Explore navigation patterns and UI components
+  </Card>
+  <Card title="API Integration" icon="cloud" href="/features/weather-api">
+    Configure the OpenWeatherMap API integration
+  </Card>
+</CardGroup>

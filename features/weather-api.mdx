@@ -1,0 +1,313 @@
+---
+title: 'Weather API Integration'
+description: 'Learn how HuelvaPedia integrates OpenWeatherMap API to display real-time weather data for Huelva'
+icon: 'cloud-sun'
+---
+
+## Overview
+
+HuelvaPedia includes a **real-time weather feature** that displays current conditions in Huelva, Spain using the [OpenWeatherMap API](https://openweathermap.org/api). The implementation uses Android Volley for HTTP requests and custom translation logic for Spanish localization.
+
+<Warning>
+  The current implementation includes the API key hardcoded in the source. For production, move API keys to `local.properties` and access via `BuildConfig`.
+</Warning>
+
+## API Configuration
+
+The weather feature is implemented in `Tiempo.java:26-27`:
+
+```java
+private static final String URL_BASE = "http://api.openweathermap.org/data/2.5/weather";
+private static final String API_KEY = "c0d138083fb0634d6d5cd36adafc9a77";
+```
+
+<Info>
+  HuelvaPedia uses the **Current Weather Data** endpoint from OpenWeatherMap, which provides temperature, humidity, wind speed, cloud coverage, and weather descriptions.
+</Info>
+
+## Dependencies
+
+The app uses **Volley** for networking, declared in `app/build.gradle:42`:
+
+```gradle
+dependencies {
+    implementation 'com.android.volley:volley:1.2.1'
+}
+```
+
+## API Request Implementation
+
+### Building the Request URL
+
+The complete API URL is constructed in `Tiempo.java:53`:
+
+```java
+String urlCompleta = URL_BASE + "?q=Huelva,ES&appid=" + API_KEY;
+```
+
+This queries weather data for **Huelva, Spain** using the city name and country code format.
+
+### Making the HTTP Request
+
+The app uses Volley's `StringRequest` to fetch weather data (`Tiempo.java:55-91`):
+
+```java
+StringRequest stringRequest = new StringRequest(Request.Method.POST, urlCompleta,
+    response -> {
+        try {
+            JSONObject jsonResponse = new JSONObject(response);
+            JSONArray jsonArray = jsonResponse.getJSONArray("weather");
+            JSONObject jsonObjectWeather = jsonArray.getJSONObject(0);
+            String descripcion = jsonObjectWeather.getString("description");
+            
+            JSONObject jsonObjectMain = jsonResponse.getJSONObject("main");
+            double temp = jsonObjectMain.getDouble("temp") - 273.15;
+            double sensacion = jsonObjectMain.getDouble("feels_like") - 273.15;
+            float presion = jsonObjectMain.getInt("pressure");
+            int humedad = jsonObjectMain.getInt("humidity");
+            
+            JSONObject jsonObjectWind = jsonResponse.getJSONObject("wind");
+            String viento = jsonObjectWind.getString("speed");
+            
+            JSONObject jsonObjectClouds = jsonResponse.getJSONObject("clouds");
+            String nubes = jsonObjectClouds.getString("all");
+
+            traducirDescripcion(descripcion);
+
+            tvTemperatura.setText(formatoDecimal.format(temp) + "ºC");
+            tvSensacion.setText("Sensacion térmica: " + formatoDecimal.format(sensacion) + "ºC");
+            tvHumedad.setText("Humedad: " + humedad + "%");
+            tvNubes.setText("Cantidad de nubes: " + nubes + "%");
+            tvViento.setText("Velocidad del viento: " + viento + "m/s (metros por segundo)");
+            tvPresion.setText("Presión atmosférica: " + presion + " hPa");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    },
+    error -> Toast.makeText(getApplicationContext(), error.toString().trim(), Toast.LENGTH_SHORT).show()
+);
+
+RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+requestQueue.add(stringRequest);
+```
+
+## JSON Response Parsing
+
+The OpenWeatherMap API returns JSON data structured like this:
+
+```json
+{
+  "weather": [
+    {
+      "description": "clear sky"
+    }
+  ],
+  "main": {
+    "temp": 298.15,
+    "feels_like": 296.15,
+    "pressure": 1013,
+    "humidity": 65
+  },
+  "wind": {
+    "speed": 3.5
+  },
+  "clouds": {
+    "all": 20
+  }
+}
+```
+
+<Accordion title="Parsing Steps">
+  <Steps>
+    <Step title="Parse Root Object">
+      Convert the response string to a `JSONObject`
+    </Step>
+    
+    <Step title="Extract Weather Array">
+      Get the `weather` array and access the first element for description
+    </Step>
+    
+    <Step title="Extract Main Object">
+      Parse temperature (Kelvin → Celsius), feels-like, pressure, and humidity
+    </Step>
+    
+    <Step title="Extract Wind & Clouds">
+      Get wind speed from `wind.speed` and cloud coverage from `clouds.all`
+    </Step>
+  </Steps>
+</Accordion>
+
+## Temperature Conversion
+
+The API returns temperatures in Kelvin. The app converts to Celsius (`Tiempo.java:64-65`):
+
+```java
+double temp = jsonObjectMain.getDouble("temp") - 273.15;
+double sensacion = jsonObjectMain.getDouble("feels_like") - 273.15;
+```
+
+Decimal formatting is handled by `DecimalFormat` (`Tiempo.java:32`):
+
+```java
+private final DecimalFormat formatoDecimal = new DecimalFormat("#.#");
+```
+
+## Spanish Localization
+
+The `traducirDescripcion()` method (`Tiempo.java:97-134`) translates English weather descriptions to Spanish and sets corresponding icons:
+
+```java
+private void traducirDescripcion(String descripcion) {
+    switch (descripcion) {
+        case "clear sky":
+            tvDescripcion.setText("Despejado");
+            imagenDelTiempo.setImageResource(R.mipmap.ic_soleado);
+            break;
+        case "few clouds":
+            tvDescripcion.setText("Ligeramente nublado");
+            imagenDelTiempo.setImageResource(R.mipmap.ic_ligeramentenublado);
+            break;
+        case "scattered clouds":
+            tvDescripcion.setText("Nubes dispersas");
+            imagenDelTiempo.setImageResource(R.mipmap.ic_nubesdispersas);
+            break;
+        case "overcast clouds":
+            tvDescripcion.setText("Nublado");
+            imagenDelTiempo.setImageResource(R.mipmap.ic_nublado);
+            break;
+        case "light rain":
+            tvDescripcion.setText("Lluvia ligera");
+            imagenDelTiempo.setImageResource(R.mipmap.ic_lluvialigera);
+            break;
+        case "broken clouds":
+            tvDescripcion.setText("Nubes rotas");
+            imagenDelTiempo.setImageResource(R.mipmap.ic_nubesrotas);
+            break;
+        case "heavy intensity rain":
+            tvDescripcion.setText("Lluvia pesada");
+            imagenDelTiempo.setImageResource(R.mipmap.ic_lluviafuerte);
+            break;
+        case "moderate rain":
+            tvDescripcion.setText("Lluvia moderada");
+            imagenDelTiempo.setImageResource(R.mipmap.ic_lluviamoderada);
+            break;
+    }
+}
+```
+
+<Note>
+  The app includes custom weather icons stored in the `mipmap` directory, providing a localized visual experience.
+</Note>
+
+## UI Components
+
+The weather activity initializes TextViews and an ImageView to display data (`Tiempo.java:29-47`):
+
+```java
+private TextView tvTemperatura, tvDescripcion, tvSensacion, tvPresion, tvHumedad, tvNubes, tvViento;
+private ImageView imagenDelTiempo;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_tiempo);
+
+    tvTemperatura = findViewById(R.id.temperatura);
+    tvDescripcion = findViewById(R.id.descripcion);
+    tvSensacion = findViewById(R.id.sensacion);
+    tvPresion = findViewById(R.id.presion);
+    tvHumedad = findViewById(R.id.humedad);
+    tvNubes = findViewById(R.id.nubes);
+    tvViento = findViewById(R.id.viento);
+    imagenDelTiempo = findViewById(R.id.imagentiempo);
+}
+```
+
+## Navigation to Weather Screen
+
+Users access the weather feature via a button in `MainActivity.java:72-75`:
+
+```java
+botonTiempo.setOnClickListener(v -> {
+    Intent intent = new Intent(v.getContext(), Tiempo.class);
+    startActivity(intent);
+});
+```
+
+<Info>
+  The weather button is hidden in `Secundaria.java:38` to only show it on the main screen, not in subcategories.
+</Info>
+
+## Displayed Weather Metrics
+
+<CardGroup cols={2}>
+  <Card title="Temperature" icon="temperature-half">
+    Current temperature in Celsius with decimal precision
+  </Card>
+  
+  <Card title="Feels Like" icon="temperature-three-quarters">
+    Perceived temperature accounting for wind chill and humidity
+  </Card>
+  
+  <Card title="Humidity" icon="droplet">
+    Relative humidity percentage
+  </Card>
+  
+  <Card title="Cloud Coverage" icon="cloud">
+    Percentage of sky covered by clouds
+  </Card>
+  
+  <Card title="Wind Speed" icon="wind">
+    Wind velocity in meters per second
+  </Card>
+  
+  <Card title="Atmospheric Pressure" icon="gauge">
+    Barometric pressure in hectopascals (hPa)
+  </Card>
+</CardGroup>
+
+## Error Handling
+
+Network errors are caught and displayed via Toast messages (`Tiempo.java:87`):
+
+```java
+error -> Toast.makeText(getApplicationContext(), error.toString().trim(), Toast.LENGTH_SHORT).show()
+```
+
+<Tip>
+  Consider implementing retry logic and offline caching for better user experience in areas with poor connectivity.
+</Tip>
+
+## Security Considerations
+
+<Warning>
+  **TODO (from source code):** Move the API key to `local.properties` and access via `BuildConfig` to avoid exposing it in version control.
+</Warning>
+
+### Recommended Approach
+
+1. Add to `local.properties`:
+   ```properties
+   OPENWEATHER_API_KEY=c0d138083fb0634d6d5cd36adafc9a77
+   ```
+
+2. Read in `build.gradle`:
+   ```gradle
+   def localProperties = new Properties()
+   localProperties.load(new FileInputStream(rootProject.file("local.properties")))
+   
+   buildConfigField "String", "OPENWEATHER_API_KEY", localProperties['OPENWEATHER_API_KEY']
+   ```
+
+3. Access in code:
+   ```java
+   private static final String API_KEY = BuildConfig.OPENWEATHER_API_KEY;
+   ```
+
+## Related Files
+
+- `Tiempo.java` - Complete weather implementation
+- `MainActivity.java:72-75` - Navigation to weather screen
+- `Secundaria.java:38` - Weather button visibility control
+- `app/build.gradle:42` - Volley dependency
+- `res/layout/activity_tiempo.xml` - Weather UI layout

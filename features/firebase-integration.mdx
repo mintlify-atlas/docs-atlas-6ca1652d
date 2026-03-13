@@ -1,0 +1,231 @@
+---
+title: 'Firebase Integration'
+description: 'Learn how HuelvaPedia uses Firebase Realtime Database for content management'
+icon: 'database'
+---
+
+## Overview
+
+HuelvaPedia leverages **Firebase Realtime Database** to store and retrieve all encyclopedia content dynamically. This architecture allows content updates without requiring app redeployment, making it ideal for a growing knowledge base about Huelva.
+
+<Info>
+  Firebase Realtime Database provides real-time synchronization and offline capabilities, ensuring users can access content even with poor connectivity.
+</Info>
+
+## Database Structure
+
+The Firebase database follows a hierarchical structure where each topic category has its own node:
+
+```
+firebase-root/
+├── principal/              # Main categories (shown in MainActivity)
+│   ├── elemento1/
+│   │   ├── nombre: "Historia"
+│   │   ├── foto: "url"
+│   │   ├── descripcion: "..."
+│   │   ├── ultimo: false
+│   │   └── ...
+│   └── elemento2/
+│       └── ...
+├── historia/              # Subcategory (normalized from "Historia")
+│   ├── subelemento1/
+│   └── subelemento2/
+└── [other-categories]/
+```
+
+## Data Model
+
+All content elements are represented by the `Elementos` class, which maps directly to Firebase objects:
+
+```java
+public class Elementos {
+    private String nombre;
+    private String foto;
+    private String descripcion;
+    private String ubicacion1;
+    private String ubicacion2;
+    private String telefono;
+    private Boolean ultimo;
+    private String enlace;
+
+    public Elementos() { } // Required empty constructor for Firebase
+
+    // Getters and setters...
+}
+```
+
+<Accordion title="Field Descriptions">
+  - **nombre**: Display name of the element
+  - **foto**: URL to the image (loaded via Picasso)
+  - **descripcion**: Description text
+  - **ubicacion1** & **ubicacion2**: Map URI components (e.g., base URL + encoded location)
+  - **telefono**: Phone number for call functionality
+  - **ultimo**: Boolean flag indicating if this is a leaf node (shows action buttons) or navigates deeper
+  - **enlace**: External web link
+</Accordion>
+
+## Firebase Setup
+
+### Dependencies
+
+The app uses Firebase Realtime Database SDK version 19.7.0:
+
+```gradle
+dependencies {
+    implementation 'com.google.firebase:firebase-database:19.7.0'
+}
+```
+
+### Initialization
+
+Firebase is initialized via the Google Services plugin:
+
+```gradle
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+}
+```
+
+## Data Fetching Patterns
+
+### Main Category Loading
+
+In `MainActivity.java:48-70`, the app loads all main categories from the `principal` node:
+
+```java
+private DatabaseReference reference;
+private ArrayList<Elementos> listaElementos;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    listaElementos = new ArrayList<>();
+    
+    // Reference to the "principal" node
+    reference = FirebaseDatabase.getInstance().getReference().child("principal");
+    
+    reference.addValueEventListener(new ValueEventListener() {
+        @Override
+        public void onDataChange(@NonNull DataSnapshot snapshot) {
+            listaElementos.clear(); // Prevents duplication on Firebase updates
+            for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                Elementos elemento = dataSnapshot.getValue(Elementos.class);
+                listaElementos.add(elemento);
+            }
+            adaptador = new Adaptador(MainActivity.this, listaElementos);
+            recyclerView.setAdapter(adaptador);
+        }
+
+        @Override
+        public void onCancelled(@NonNull DatabaseError error) {
+            Toast.makeText(MainActivity.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+        }
+    });
+}
+```
+
+<Note>
+  The `addValueEventListener()` method provides real-time updates. Whenever data changes in Firebase, the callback automatically triggers, clearing and repopulating the list.
+</Note>
+
+### Dynamic Subcategory Loading
+
+In `Secundaria.java:49-77`, subcategories are loaded dynamically based on navigation context:
+
+```java
+// Receive the category name from the previous activity
+Intent intent = getIntent();
+String nombreReferencia = intent.getStringExtra("Nombre")
+        .replace(" ", "")
+        .toLowerCase();
+
+// Build Firebase reference from normalized name
+reference = FirebaseDatabase.getInstance().getReference().child(nombreReferencia);
+
+reference.addValueEventListener(new ValueEventListener() {
+    @Override
+    public void onDataChange(@NonNull DataSnapshot snapshot) {
+        listaElementos.clear(); // Prevents duplication on Firebase updates
+        for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+            Elementos elemento = dataSnapshot.getValue(Elementos.class);
+            listaElementos.add(elemento);
+        }
+        adaptador = new Adaptador(Secundaria.this, listaElementos);
+        recyclerView.setAdapter(adaptador);
+    }
+
+    @Override
+    public void onCancelled(@NonNull DatabaseError error) {
+        Toast.makeText(Secundaria.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+    }
+});
+```
+
+<Warning>
+  The normalization logic (`replace(" ", "").toLowerCase()`) means Firebase node names must match this pattern. For example, "Historia de Huelva" → `historiadehuelva`.
+</Warning>
+
+## Key Implementation Details
+
+<Steps>
+  <Step title="Reference Creation">
+    Use `FirebaseDatabase.getInstance().getReference().child(nodeName)` to target specific database nodes.
+  </Step>
+  
+  <Step title="Value Event Listener">
+    Attach a `ValueEventListener` to receive real-time updates whenever data changes.
+  </Step>
+  
+  <Step title="Data Deserialization">
+    Firebase automatically maps JSON objects to `Elementos.class` using reflection (requires empty constructor and matching field names).
+  </Step>
+  
+  <Step title="List Management">
+    Always call `listaElementos.clear()` before populating to avoid duplicates when Firebase triggers updates.
+  </Step>
+</Steps>
+
+## Error Handling
+
+Both activities implement the `onCancelled()` callback to handle Firebase errors gracefully:
+
+```java
+@Override
+public void onCancelled(@NonNull DatabaseError error) {
+    Toast.makeText(MainActivity.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+}
+```
+
+<Tip>
+  For production apps, consider logging the actual error (`error.getMessage()`) to Firebase Crashlytics or another analytics service for debugging.
+</Tip>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Empty Constructor" icon="brackets-curly">
+    Always provide a public no-argument constructor in data classes for Firebase deserialization.
+  </Card>
+  
+  <Card title="Clear Before Populate" icon="broom">
+    Call `clear()` on your list in `onDataChange()` to prevent duplicate entries on real-time updates.
+  </Card>
+  
+  <Card title="Offline Persistence" icon="wifi-slash">
+    Enable Firebase offline persistence for better UX: `FirebaseDatabase.getInstance().setPersistenceEnabled(true);`
+  </Card>
+  
+  <Card title="Security Rules" icon="shield">
+    Configure Firebase security rules to restrict write access while allowing public read access for encyclopedia content.
+  </Card>
+</CardGroup>
+
+## Related Files
+
+- `MainActivity.java:48-70` - Main category loading
+- `Secundaria.java:49-77` - Subcategory loading
+- `Elementos.java` - Data model class
+- `app/build.gradle:48` - Firebase dependency declaration

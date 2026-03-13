@@ -1,0 +1,345 @@
+---
+title: "Android Manifest"
+description: "Complete documentation of HuelvaPedia's AndroidManifest.xml configuration including permissions, activities, and security settings"
+---
+
+## Overview
+
+The Android Manifest (`AndroidManifest.xml`) is the central configuration file that declares essential information about HuelvaPedia to the Android system. It defines permissions, activities, screen compatibility, and security configurations.
+
+<Info>
+  The manifest is located at `app/src/main/AndroidManifest.xml` and is required for every Android application.
+</Info>
+
+## Permissions
+
+HuelvaPedia requires two runtime permissions for network operations:
+
+```xml app/src/main/AndroidManifest.xml
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+```
+
+<CardGroup cols={2}>
+  <Card title="INTERNET" icon="globe">
+    **Required for:**
+    - Firebase Realtime Database access
+    - Weather API requests (OpenWeatherMap)
+    - Image loading via Picasso
+    - Volley HTTP networking
+  </Card>
+  <Card title="ACCESS_NETWORK_STATE" icon="signal">
+    **Required for:**
+    - Checking network connectivity
+    - Determining connection type (WiFi/Mobile)
+    - Handling offline scenarios gracefully
+  </Card>
+</CardGroup>
+
+<Note>
+  Both permissions are **normal** permissions granted automatically at install time and do not require runtime permission requests.
+</Note>
+
+## Screen Compatibility
+
+### Supported Screen Configurations
+
+HuelvaPedia explicitly declares compatible screen sizes and densities:
+
+```xml app/src/main/AndroidManifest.xml
+<compatible-screens>
+    <!-- all small size screens -->
+    <screen android:screenSize="small" android:screenDensity="ldpi" />
+    <screen android:screenSize="small" android:screenDensity="mdpi" />
+    <screen android:screenSize="small" android:screenDensity="hdpi" />
+    <screen android:screenSize="small" android:screenDensity="xhdpi" />
+    <!-- all normal size screens -->
+    <screen android:screenSize="normal" android:screenDensity="ldpi" />
+    <screen android:screenSize="normal" android:screenDensity="mdpi" />
+    <screen android:screenSize="normal" android:screenDensity="hdpi" />
+    <screen android:screenSize="normal" android:screenDensity="xhdpi" />
+</compatible-screens>
+```
+
+### Screen Size Breakdown
+
+<Tabs>
+  <Tab title="Small Screens">
+    Supports small screens (typically 3-4 inches) across all densities:
+    - **ldpi** (120 dpi): Low-density screens
+    - **mdpi** (160 dpi): Medium-density screens
+    - **hdpi** (240 dpi): High-density screens
+    - **xhdpi** (320 dpi): Extra high-density screens
+  </Tab>
+  
+  <Tab title="Normal Screens">
+    Supports normal screens (typically 4-7 inches) across all densities:
+    - **ldpi** (120 dpi): Low-density screens
+    - **mdpi** (160 dpi): Medium-density screens
+    - **hdpi** (240 dpi): High-density screens
+    - **xhdpi** (320 dpi): Extra high-density screens
+  </Tab>
+</Tabs>
+
+<Warning>
+  The app excludes **large** and **xlarge** screens (tablets). Google Play will not show the app to devices with those screen sizes.
+</Warning>
+
+## Application Configuration
+
+### Core Application Settings
+
+```xml app/src/main/AndroidManifest.xml
+<application
+    android:allowBackup="true"
+    android:icon="@mipmap/ic_escudohuelva"
+    android:label="@string/app_name"
+    android:roundIcon="@mipmap/ic_escudohuelva"
+    android:supportsRtl="true"
+    android:theme="@style/Theme.HuelvaPedia"
+    android:networkSecurityConfig="@xml/network_security_config">
+```
+
+### Application Attributes
+
+| Attribute | Value | Description |
+|-----------|-------|-------------|
+| `allowBackup` | `true` | Enables automatic app data backup to Google Drive |
+| `icon` | `@mipmap/ic_escudohuelva` | Huelva coat of arms as app icon |
+| `label` | `@string/app_name` | App name displayed to users |
+| `roundIcon` | `@mipmap/ic_escudohuelva` | Round icon for adaptive icon launchers |
+| `supportsRtl` | `true` | Right-to-left layout support |
+| `theme` | `@style/Theme.HuelvaPedia` | Custom Material Design theme |
+| `networkSecurityConfig` | `@xml/network_security_config` | Network security policy configuration |
+
+## Network Security Configuration
+
+### Cleartext Traffic Policy
+
+HuelvaPedia uses a custom network security configuration:
+
+```xml app/src/main/res/xml/network_security_config.xml
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true"/>
+</network-security-config>
+```
+
+<Warning>
+  **Cleartext HTTP traffic is permitted.** This allows the app to connect to non-HTTPS endpoints, which is necessary for certain weather API endpoints.
+</Warning>
+
+<Tip>
+  For production apps handling sensitive data, consider restricting cleartext traffic and using HTTPS exclusively.
+</Tip>
+
+## Activities
+
+HuelvaPedia declares four activities, all locked to portrait orientation:
+
+### Activity Hierarchy
+
+<Steps>
+  <Step title="PantallaCarga (Launch Screen)">
+    The launcher activity that displays first:
+    
+    ```xml app/src/main/AndroidManifest.xml
+    <activity android:name=".PantallaCarga"
+        android:screenOrientation="portrait">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+    </activity>
+    ```
+    
+    - **Package**: `.PantallaCarga`
+    - **Purpose**: Splash screen and initial loading
+    - **Intent Filter**: MAIN/LAUNCHER (app entry point)
+  </Step>
+  
+  <Step title="MainActivity (Main Interface)">
+    The primary user interface:
+    
+    ```xml app/src/main/AndroidManifest.xml
+    <activity android:name=".MainActivity"
+        android:screenOrientation="portrait" />
+    ```
+    
+    - **Package**: `.MainActivity`
+    - **Purpose**: Main navigation and category browsing
+  </Step>
+  
+  <Step title="Secundaria (Detail View)">
+    Displays detailed information:
+    
+    ```xml app/src/main/AndroidManifest.xml
+    <activity android:name=".Secundaria"
+        android:screenOrientation="portrait" />
+    ```
+    
+    - **Package**: `.Secundaria`
+    - **Purpose**: Shows detailed content for selected items
+  </Step>
+  
+  <Step title="Tiempo (Weather)">
+    Weather information display:
+    
+    ```xml app/src/main/AndroidManifest.xml
+    <activity android:name=".ApiTiempo.Tiempo"
+        android:screenOrientation="portrait"></activity>
+    ```
+    
+    - **Package**: `.ApiTiempo.Tiempo`
+    - **Purpose**: Displays Huelva weather data from OpenWeatherMap API
+  </Step>
+</Steps>
+
+### Portrait Orientation Lock
+
+<Info>
+  All activities use `android:screenOrientation="portrait"` to prevent landscape mode and maintain a consistent vertical layout.
+</Info>
+
+## Activity Configuration Summary
+
+| Activity | Package Path | Launch Intent | Description |
+|----------|--------------|---------------|-------------|
+| **PantallaCarga** | `.PantallaCarga` | MAIN/LAUNCHER | Splash screen and app initialization |
+| **MainActivity** | `.MainActivity` | - | Main navigation and category selection |
+| **Secundaria** | `.Secundaria` | - | Detailed content display |
+| **Tiempo** | `.ApiTiempo.Tiempo` | - | Weather information screen |
+
+## Metadata
+
+### Preloaded Fonts
+
+```xml app/src/main/AndroidManifest.xml
+<meta-data
+    android:name="preloaded_fonts"
+    android:resource="@array/preloaded_fonts" />
+```
+
+Declares custom fonts that should be preloaded for improved performance.
+
+<Tip>
+  Preloading fonts reduces text rendering delays when the app launches.
+</Tip>
+
+## Complete Manifest
+
+The full AndroidManifest.xml configuration:
+
+```xml app/src/main/AndroidManifest.xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+    <compatible-screens>
+        <!-- all small size screens -->
+        <screen android:screenSize="small" android:screenDensity="ldpi" />
+        <screen android:screenSize="small" android:screenDensity="mdpi" />
+        <screen android:screenSize="small" android:screenDensity="hdpi" />
+        <screen android:screenSize="small" android:screenDensity="xhdpi" />
+        <!-- all normal size screens -->
+        <screen android:screenSize="normal" android:screenDensity="ldpi" />
+        <screen android:screenSize="normal" android:screenDensity="mdpi" />
+        <screen android:screenSize="normal" android:screenDensity="hdpi" />
+        <screen android:screenSize="normal" android:screenDensity="xhdpi" />
+    </compatible-screens>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_escudohuelva"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_escudohuelva"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HuelvaPedia"
+        android:networkSecurityConfig="@xml/network_security_config">
+        <activity android:name=".ApiTiempo.Tiempo"
+            android:screenOrientation="portrait"></activity>
+        <activity android:name=".MainActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".PantallaCarga"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".Secundaria"
+            android:screenOrientation="portrait" />
+
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
+    </application>
+
+</manifest>
+```
+
+## Security Considerations
+
+<CardGroup cols={2}>
+  <Card title="Backup Security" icon="shield-halved">
+    Auto-backup is enabled but should exclude sensitive data using `backup_rules.xml`
+  </Card>
+  <Card title="Network Security" icon="lock-open">
+    Cleartext traffic is permitted - consider HTTPS-only for sensitive operations
+  </Card>
+  <Card title="Permissions" icon="key">
+    Minimal permission set reduces security risks and improves user trust
+  </Card>
+  <Card title="Screen Filtering" icon="mobile">
+    Compatible screens declaration prevents installation on unsupported devices
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+<Tabs>
+  <Tab title="Adding Activities">
+    When adding new activities:
+    
+    1. Declare the activity in the manifest
+    2. Specify screen orientation if needed
+    3. Add intent filters only for entry points
+    4. Document the activity's purpose
+    
+    ```xml
+    <activity android:name=".YourNewActivity"
+        android:screenOrientation="portrait" />
+    ```
+  </Tab>
+  
+  <Tab title="Managing Permissions">
+    Follow the principle of least privilege:
+    
+    - Only request necessary permissions
+    - Document why each permission is needed
+    - Handle permission denials gracefully
+    - Consider runtime permissions for dangerous permission groups
+  </Tab>
+  
+  <Tab title="Screen Compatibility">
+    Current configuration targets phones only:
+    
+    - **Small screens**: 3-4 inch phones
+    - **Normal screens**: 4-7 inch phones
+    
+    To support tablets, add large and xlarge screen declarations:
+    ```xml
+    <screen android:screenSize="large" android:screenDensity="mdpi" />
+    <screen android:screenSize="xlarge" android:screenDensity="mdpi" />
+    ```
+  </Tab>
+</Tabs>
+
+## Related Documentation
+
+- [Gradle Configuration](/development/gradle-config) - Build settings and dependencies
+- [Architecture Overview](/architecture/overview) - Activity lifecycle and navigation
+- [Firebase Integration](/features/firebase-integration) - Network operations requiring INTERNET permission

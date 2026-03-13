@@ -1,80 +1,383 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: 'Quickstart'
+description: 'Get HuelvaPedia up and running in minutes'
+icon: 'rocket'
 ---
 
-## Get started in three steps
+<Note>
+  HuelvaPedia is an Android application built with Java and Firebase. You'll need Android Studio and a Firebase project to get started.
+</Note>
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
+Before you begin, ensure you have the following installed:
 
 <CardGroup cols={2}>
+  <Card title="Android Studio" icon="android">
+    Electric Eel or newer recommended
+  </Card>
+  <Card title="Java JDK" icon="java">
+    JDK 11 or higher
+  </Card>
+  <Card title="Android SDK" icon="mobile">
+    API 30+ (Android 11)
+  </Card>
+  <Card title="Internet Connection" icon="wifi">
+    Required for Firebase connectivity
+  </Card>
+</CardGroup>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+<Info>
+  **Minimum Device Requirement:** Android 8.1 (Oreo) - API Level 27
+</Info>
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+## Installation
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+<Steps>
+  <Step title="Clone the Repository">
+    Get the HuelvaPedia source code from GitHub:
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+    <CodeGroup>
+      ```bash HTTPS
+      git clone https://github.com/JuancaCalvino/HuelvaPedia.git
+      ```
 
+      ```bash SSH
+      git clone git@github.com:JuancaCalvino/HuelvaPedia.git
+      ```
+
+      ```bash GitHub CLI
+      gh repo clone JuancaCalvino/HuelvaPedia
+      ```
+    </CodeGroup>
+
+    Navigate to the project directory:
+    ```bash
+    cd HuelvaPedia
+    ```
+  </Step>
+
+  <Step title="Open in Android Studio">
+    1. Launch Android Studio
+    2. Select **File > Open...** from the menu
+    3. Navigate to the cloned `HuelvaPedia` folder
+    4. Click **OK** to open the project
+    5. Wait for Gradle to sync (this may take a few minutes on first load)
+
+    <Tip>
+      If you encounter Gradle sync issues, try **File > Invalidate Caches and Restart**
+    </Tip>
+  </Step>
+
+  <Step title="Configure Firebase">
+    <Warning>
+      The `google-services.json` file is **NOT included** in the repository for security reasons. You must set up your own Firebase project.
+    </Warning>
+
+    ### Create Firebase Project
+
+    1. Go to the [Firebase Console](https://console.firebase.google.com/)
+    2. Click **Add Project** or select an existing project
+    3. Follow the setup wizard to create your project
+
+    ### Add Android App to Firebase
+
+    1. In the Firebase Console, click **Add app** and select Android
+    2. Enter the package name: `com.example.huelvapedia`
+    3. (Optional) Add an app nickname: "HuelvaPedia"
+    4. Click **Register app**
+
+    ### Download Configuration File
+
+    1. Download the `google-services.json` file
+    2. Place it in the `app/` directory of your project:
+    ```
+    HuelvaPedia/
+    └── app/
+        ├── build.gradle
+        ├── google-services.json  ← Place here
+        └── src/
+    ```
+
+    <Info>
+      The app/build.gradle file already includes the Google Services plugin:
+      ```gradle
+      plugins {
+          id 'com.android.application'
+          id 'com.google.gms.google-services'
+      }
+      ```
+    </Info>
+  </Step>
+
+  <Step title="Set Up Firebase Realtime Database">
+    HuelvaPedia uses Firebase Realtime Database to store all content dynamically.
+
+    ### Enable Realtime Database
+
+    1. In Firebase Console, navigate to **Build > Realtime Database**
+    2. Click **Create Database**
+    3. Choose a location (preferably close to your users)
+    4. Start in **Test mode** for development (remember to secure it later)
+
+    ### Database Structure
+
+    The app expects data under a `principal` node. Here's the structure:
+
+    ```json
+    {
+      "principal": {
+        "item1": {
+          "nombre": "Catedral de Huelva",
+          "foto": "https://example.com/image.jpg",
+          "descripcion": "Historic cathedral in the heart of Huelva",
+          "ubicacion1": "Plaza de la Merced",
+          "ubicacion2": "Huelva, Spain",
+          "telefono": "+34 959 24 61 64",
+          "ultimo": false,
+          "enlace": "https://example.com/more-info"
+        },
+        "item2": {
+          "nombre": "Monumento a Colón",
+          "foto": "https://example.com/colon.jpg",
+          "descripcion": "Monument dedicated to Christopher Columbus",
+          "ubicacion1": "Punta del Sebo",
+          "ubicacion2": "Huelva, Spain",
+          "telefono": "",
+          "ultimo": false,
+          "enlace": "https://example.com/colon"
+        }
+      }
+    }
+    ```
+
+    <Tip>
+      The `Elementos` class (app/src/main/java/com/example/huelvapedia/Elementos.java:3) defines the data model with fields for nombre, foto, descripcion, ubicacion1, ubicacion2, telefono, ultimo, and enlace.
+    </Tip>
+
+    ### Configure Database Rules
+
+    For development, you can use these rules (in Firebase Console > Rules tab):
+    ```json
+    {
+      "rules": {
+        ".read": true,
+        ".write": false
+      }
+    }
+    ```
+
+    <Warning>
+      These rules allow public read access. Adjust for production based on your security requirements.
+    </Warning>
+  </Step>
+
+  <Step title="Build and Run">
+    ### Sync Gradle
+
+    If not already synced, click the **Sync Project with Gradle Files** button in the toolbar, or:
+    - Go to **File > Sync Project with Gradle Files**
+
+    ### Run the App
+
+    <Tabs>
+      <Tab title="Physical Device">
+        1. Enable **Developer Options** on your Android device
+        2. Enable **USB Debugging**
+        3. Connect your device via USB
+        4. Click the **Run** button (▶) or press `Shift + F10`
+        5. Select your device from the list
+      </Tab>
+
+      <Tab title="Emulator">
+        1. Open **AVD Manager** (Tools > Device Manager)
+        2. Create a new virtual device or select an existing one
+        3. Ensure the device runs API 27 or higher
+        4. Click the **Run** button (▶) or press `Shift + F10`
+        5. Select your emulator from the list
+      </Tab>
+    </Tabs>
+
+    <Info>
+      **Internet connection is required** - The app fetches all content from Firebase in real-time.
+    </Info>
+  </Step>
+
+  <Step title="Verify Installation">
+    Once the app launches, you should see:
+
+    1. **Splash Screen** (PantallaCarga activity)
+    2. **Main Activity** with a RecyclerView displaying categories from Firebase
+    3. Categories loaded from the `principal` node in your database
+
+    If you see "Algo ha fallado" (Something failed), check:
+    - Firebase configuration is correct
+    - `google-services.json` is in the right location
+    - Database has data under the `principal` node
+    - Internet connection is active
+    - Database rules allow read access
+
+    <Tip>
+      Check Android Studio's Logcat for detailed error messages if something goes wrong.
+    </Tip>
+  </Step>
+</Steps>
+
+## Project Structure
+
+```
+HuelvaPedia/
+├── app/
+│   ├── build.gradle              # App-level dependencies
+│   ├── google-services.json      # Firebase config (you create this)
+│   └── src/
+│       └── main/
+│           ├── AndroidManifest.xml
+│           ├── java/com/example/huelvapedia/
+│           │   ├── MainActivity.java        # Main app screen
+│           │   ├── Elementos.java           # Data model
+│           │   ├── Adaptador.java           # RecyclerView adapter
+│           │   ├── PantallaCarga.java       # Splash screen
+│           │   └── ...
+│           └── res/                         # Resources (layouts, drawables)
+├── build.gradle                  # Project-level build config
+└── settings.gradle
+```
+
+## Key Technologies
+
+HuelvaPedia is built with:
+
+<CardGroup cols={2}>
+  <Card title="Language" icon="code">
+    Java (JDK 11+)
+  </Card>
+  <Card title="Backend" icon="database">
+    Firebase Realtime Database
+  </Card>
+  <Card title="Networking" icon="network-wired">
+    Android Volley
+  </Card>
+  <Card title="Image Loading" icon="image">
+    Picasso 2.8
+  </Card>
+  <Card title="UI Framework" icon="mobile">
+    AndroidX + Material Design
+  </Card>
+  <Card title="Build System" icon="screwdriver-wrench">
+    Gradle 7.4.2
+  </Card>
+</CardGroup>
+
+## Configuration Details
+
+### SDK Versions
+
+From `app/build.gradle:7-14`:
+
+```gradle
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
+
+    defaultConfig {
+        applicationId "com.example.huelvapedia"
+        minSdkVersion 27
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+    }
+}
+```
+
+### Required Permissions
+
+From `AndroidManifest.xml:4-5`:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+```
+
+### Firebase Integration
+
+The app connects to Firebase in `MainActivity.java:48`:
+
+```java
+reference = FirebaseDatabase.getInstance().getReference().child("principal");
+
+reference.addValueEventListener(new ValueEventListener() {
+    @Override
+    public void onDataChange(@NonNull DataSnapshot snapshot) {
+        listaElementos.clear();
+        for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+            Elementos elemento = dataSnapshot.getValue(Elementos.class);
+            listaElementos.add(elemento);
+        }
+        adaptador = new Adaptador(MainActivity.this, listaElementos);
+        recyclerView.setAdapter(adaptador);
+    }
+
+    @Override
+    public void onCancelled(@NonNull DatabaseError error) {
+        Toast.makeText(MainActivity.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+    }
+});
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Gradle sync fails">
+    **Solution:**
+    - Check your internet connection
+    - Try **File > Invalidate Caches and Restart**
+    - Ensure Java JDK 11+ is installed
+    - Update Android Studio to the latest version
+  </Accordion>
+
+  <Accordion title="App crashes on launch">
+    **Solution:**
+    - Verify `google-services.json` is in the `app/` directory
+    - Check Firebase project configuration matches package name
+    - Review Logcat for specific error messages
+    - Ensure minimum SDK version is met (API 27+)
+  </Accordion>
+
+  <Accordion title="No data appears in the app">
+    **Solution:**
+    - Verify Firebase Realtime Database has data under `principal` node
+    - Check database rules allow read access
+    - Confirm device/emulator has internet connectivity
+    - Check Logcat for Firebase connection errors
+  </Accordion>
+
+  <Accordion title="Google Services plugin error">
+    **Solution:**
+    - Ensure `google-services.json` is present
+    - Verify the file is valid JSON
+    - Check that the package name in Firebase matches `com.example.huelvapedia`
+    - Clean and rebuild project (Build > Clean Project, then Build > Rebuild Project)
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture Overview" icon="diagram-project" href="/architecture/overview">
+    Learn about HuelvaPedia's architecture and design patterns
+  </Card>
+  <Card title="Firebase Setup" icon="database" href="/development/firebase-setup">
+    Deep dive into Firebase configuration and data structure
+  </Card>
+  <Card title="Core Features" icon="star" href="/features/firebase-integration">
+    Explore Firebase integration and other core features
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/mainactivity">
+    Browse the complete API documentation
+  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Need help? Check the [GitHub repository](https://github.com/JuancaCalvino/HuelvaPedia) for issues and discussions.
 </Note>

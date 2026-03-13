@@ -1,0 +1,555 @@
+---
+title: Firebase Setup
+description: Complete guide to configuring Firebase Realtime Database for HuelvaPedia
+---
+
+HuelvaPedia uses Firebase Realtime Database as its cloud-based backend to store and serve all encyclopedia content. This guide walks you through creating a Firebase project, configuring it for Android, and setting up the database structure.
+
+<Warning>
+  **Security Notice:** The `google-services.json` file is excluded from version control (listed in `.gitignore`) because it contains project-specific credentials. Each developer must create their own Firebase project and configuration file.
+</Warning>
+
+## Why Firebase?
+
+HuelvaPedia leverages Firebase for several key advantages:
+
+- **Cloud-Based Storage** - No local database; all content fetched dynamically
+- **Real-Time Updates** - Content updates without requiring app updates
+- **Lightweight App** - Reduces app size by keeping data in the cloud
+- **Easy Content Management** - Update information via Firebase Console
+- **Scalability** - Handles growing content seamlessly
+
+## Creating a Firebase Project
+
+Start by creating a new Firebase project in the Firebase Console.
+
+<Steps>
+  <Step title="Access Firebase Console">
+    Navigate to [Firebase Console](https://console.firebase.google.com/) and sign in with your Google account.
+  </Step>
+  
+  <Step title="Create New Project">
+    Click **Add project** or **Create a project**.
+    
+    Enter a project name (e.g., "HuelvaPedia Dev" or "HuelvaPedia").
+  </Step>
+  
+  <Step title="Configure Google Analytics (Optional)">
+    You can enable or disable Google Analytics for this project. For development purposes, it's optional.
+    
+    Click **Continue** after making your selection.
+  </Step>
+  
+  <Step title="Complete Project Creation">
+    If you enabled Analytics, select or create an Analytics account.
+    
+    Click **Create project** and wait for the project to be provisioned.
+  </Step>
+  
+  <Step title="Navigate to Project Overview">
+    Once complete, click **Continue** to enter your Firebase project dashboard.
+  </Step>
+</Steps>
+
+## Adding Android App to Firebase
+
+Now register your Android app with the Firebase project.
+
+<Steps>
+  <Step title="Start Android App Registration">
+    On the Project Overview page, click the **Android** icon to add an Android app.
+  </Step>
+  
+  <Step title="Enter Package Name">
+    In the "Register app" step, enter the Android package name:
+    
+    ```
+    com.example.huelvapedia
+    ```
+    
+    <Warning>
+      **Critical:** This package name must match exactly with the `applicationId` in `app/build.gradle` and the `namespace` in `AndroidManifest.xml`. Do not modify it.
+    </Warning>
+  </Step>
+  
+  <Step title="Add App Nickname (Optional)">
+    Optionally provide a nickname like "HuelvaPedia Android" to identify this app in the console.
+  </Step>
+  
+  <Step title="Skip Debug Signing Certificate">
+    The debug signing certificate SHA-1 is optional for Realtime Database. You can leave it blank and click **Register app**.
+  </Step>
+</Steps>
+
+## Downloading google-services.json
+
+The `google-services.json` file contains configuration and API keys for your Firebase project.
+
+<Steps>
+  <Step title="Download Configuration File">
+    After registering the app, Firebase will prompt you to download `google-services.json`.
+    
+    Click **Download google-services.json** to save the file to your computer.
+  </Step>
+  
+  <Step title="Locate Your Project's app/ Directory">
+    In your file explorer, navigate to your cloned HuelvaPedia project:
+    
+    ```
+    HuelvaPedia/app/
+    ```
+  </Step>
+  
+  <Step title="Place the File">
+    Move or copy the downloaded `google-services.json` file into the `app/` directory:
+    
+    ```plaintext
+    HuelvaPedia/
+    └── app/
+        ├── build.gradle
+        └── google-services.json  ← Place here
+    ```
+    
+    <Info>
+      The file must be placed directly in the `app/` folder, not in subdirectories like `app/src/`.
+    </Info>
+  </Step>
+  
+  <Step title="Verify File Location">
+    Confirm the file is in the correct location. From the terminal:
+    
+    ```bash
+    ls -la app/google-services.json
+    ```
+    
+    You should see the file listed.
+  </Step>
+</Steps>
+
+### Understanding google-services.json
+
+The `google-services.json` file contains:
+
+- **Project Information** - Project ID and number
+- **Client Information** - App package name and OAuth clients
+- **API Keys** - Keys for Firebase services
+- **Database URL** - Your Realtime Database endpoint
+
+<Note>
+  The Google Services plugin (configured in `build.gradle`) automatically processes this file during build to generate required resources and configurations.
+</Note>
+
+## Firebase SDK Configuration
+
+The HuelvaPedia project is already configured with the necessary Firebase dependencies. Here's what's included:
+
+### Project-Level Configuration
+
+In the root `build.gradle:9`:
+
+```gradle build.gradle
+classpath 'com.google.gms:google-services:4.3.15'
+```
+
+This adds the Google Services plugin to process `google-services.json`.
+
+### Module-Level Configuration
+
+In `app/build.gradle:3`:
+
+```gradle app/build.gradle
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+}
+```
+
+This applies the Google Services plugin to the app module.
+
+### Firebase Dependency
+
+In `app/build.gradle:48`:
+
+```gradle app/build.gradle
+implementation 'com.google.firebase:firebase-database:19.7.0'
+```
+
+This adds the Firebase Realtime Database SDK to the project.
+
+<Tip>
+  These configurations are already in place. Once you add `google-services.json`, Android Studio will automatically integrate Firebase during Gradle sync.
+</Tip>
+
+## Sync Project with Gradle
+
+After adding `google-services.json`, synchronize the project.
+
+<Steps>
+  <Step title="Return to Android Studio">
+    Switch back to Android Studio with your HuelvaPedia project open.
+  </Step>
+  
+  <Step title="Trigger Gradle Sync">
+    Click **File > Sync Project with Gradle Files** or click the Gradle sync button in the toolbar.
+  </Step>
+  
+  <Step title="Wait for Sync Completion">
+    Monitor the sync progress in the bottom status bar. This may take a few minutes as dependencies are downloaded.
+  </Step>
+  
+  <Step title="Verify Success">
+    Check the "Build" output tab. You should see:
+    
+    ```
+    BUILD SUCCESSFUL
+    ```
+    
+    If there are errors, see the [Troubleshooting](#troubleshooting-firebase-issues) section below.
+  </Step>
+</Steps>
+
+## Setting Up Realtime Database
+
+Now create and configure the Firebase Realtime Database.
+
+<Steps>
+  <Step title="Navigate to Realtime Database">
+    In Firebase Console, go to **Build > Realtime Database** in the left sidebar.
+  </Step>
+  
+  <Step title="Create Database">
+    Click **Create Database**.
+  </Step>
+  
+  <Step title="Select Database Location">
+    Choose a location close to your users. For a Huelva-focused app, select a European region (e.g., `europe-west1`).
+    
+    Click **Next**.
+  </Step>
+  
+  <Step title="Configure Security Rules">
+    For development, start with **Test mode** to allow read/write access:
+    
+    ```json
+    {
+      "rules": {
+        ".read": true,
+        ".write": true
+      }
+    }
+    ```
+    
+    <Warning>
+      **Test mode is insecure for production.** These rules allow anyone to read and write your data. See [Security Rules](#database-security-rules) below for production-ready rules.
+    </Warning>
+    
+    Click **Enable**.
+  </Step>
+  
+  <Step title="Database Created">
+    Your Realtime Database is now created and ready. You'll see the database URL at the top (e.g., `https://your-project.firebaseio.com`).
+  </Step>
+</Steps>
+
+## Database Structure
+
+HuelvaPedia expects a specific database structure to function properly. The app queries the "principal" node to load main categories.
+
+### Required Database Schema
+
+Create the following JSON structure in your Realtime Database:
+
+```json Database Structure
+{
+  "principal": {
+    "categoria1": {
+      "nombre": "Historia",
+      "descripcion": "Descubre la rica historia de Huelva",
+      "imagen": "https://example.com/historia.jpg",
+      "subcategorias": {
+        "subcategoria1": {
+          "titulo": "Época Romana",
+          "contenido": "Huelva en la época romana...",
+          "imagen": "https://example.com/romana.jpg"
+        },
+        "subcategoria2": {
+          "titulo": "Descubrimiento de América",
+          "contenido": "El papel de Huelva en 1492...",
+          "imagen": "https://example.com/descubrimiento.jpg"
+        }
+      }
+    },
+    "categoria2": {
+      "nombre": "Gastronomía",
+      "descripcion": "Platos típicos y productos locales",
+      "imagen": "https://example.com/gastronomia.jpg",
+      "subcategorias": {
+        "subcategoria1": {
+          "titulo": "Jamón Ibérico",
+          "contenido": "El famoso jamón de Jabugo...",
+          "imagen": "https://example.com/jamon.jpg"
+        }
+      }
+    },
+    "categoria3": {
+      "nombre": "Lugares de Interés",
+      "descripcion": "Sitios emblemáticos para visitar",
+      "imagen": "https://example.com/lugares.jpg",
+      "subcategorias": {
+        "subcategoria1": {
+          "titulo": "Muelle de las Carabelas",
+          "contenido": "Réplicas de las naves de Colón...",
+          "imagen": "https://example.com/carabelas.jpg"
+        }
+      }
+    }
+  }
+}
+```
+
+### Adding Data to Database
+
+<Tabs>
+  <Tab title="Via Console (Recommended)">
+    <Steps>
+      <Step title="Navigate to Data Tab">
+        In Firebase Console, click on the **Data** tab in Realtime Database
+      </Step>
+      
+      <Step title="Import JSON">
+        Click the **⋮** (three dots) menu at the top right and select **Import JSON**
+      </Step>
+      
+      <Step title="Upload Structure">
+        Create a JSON file with the structure above and upload it, or paste the JSON directly
+      </Step>
+      
+      <Step title="Verify Import">
+        Expand the "principal" node to verify all categories and subcategories are present
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="Manual Entry">
+    <Steps>
+      <Step title="Add Root Node">
+        Click the **+** icon at the root level and create a new node named `principal`
+      </Step>
+      
+      <Step title="Add Category">
+        Click the **+** icon under `principal` and add a child node (e.g., `categoria1`)
+      </Step>
+      
+      <Step title="Add Category Fields">
+        Add child nodes for `nombre`, `descripcion`, `imagen` with appropriate string values
+      </Step>
+      
+      <Step title="Add Subcategories">
+        Add a `subcategorias` object node, then add individual subcategory objects with their fields
+      </Step>
+      
+      <Step title="Repeat">
+        Repeat for additional categories as needed
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+### Understanding the Data Model
+
+The app uses the `Elementos` class to map Firebase data:
+
+```java Elementos.java (Model Class)
+// Each category from Firebase is mapped to an Elementos object
+// Properties should include: nombre, descripcion, imagen, etc.
+```
+
+The `MainActivity.java:48-70` shows how data is fetched:
+
+```java MainActivity.java
+reference = FirebaseDatabase.getInstance().getReference().child("principal");
+
+reference.addValueEventListener(new ValueEventListener()
+{
+    @Override
+    public void onDataChange(@NonNull DataSnapshot snapshot)
+    {
+        listaElementos.clear();
+        for (DataSnapshot dataSnapshot : snapshot.getChildren())
+        {
+            Elementos elemento = dataSnapshot.getValue(Elementos.class);
+            listaElementos.add(elemento);
+        }
+        adaptador = new Adaptador(MainActivity.this, listaElementos);
+        recyclerView.setAdapter(adaptador);
+    }
+
+    @Override
+    public void onCancelled(@NonNull DatabaseError error)
+    {
+        Toast.makeText(MainActivity.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+    }
+});
+```
+
+<Info>
+  The app listens for changes in real-time. Any updates made in the Firebase Console will automatically appear in the app without restarting.
+</Info>
+
+## Database Security Rules
+
+For production deployment, implement proper security rules:
+
+### Production-Ready Rules
+
+```json Security Rules
+{
+  "rules": {
+    "principal": {
+      ".read": true,
+      ".write": "auth != null && auth.uid === 'your-admin-uid'"
+    }
+  }
+}
+```
+
+This configuration:
+- ✅ Allows **read** access to anyone (public encyclopedia)
+- ❌ Restricts **write** access to authenticated admins only
+
+<Tip>
+  Since HuelvaPedia is an informational app without user-generated content, public read access is appropriate. Write access should be restricted to content administrators.
+</Tip>
+
+### Updating Security Rules
+
+<Steps>
+  <Step title="Go to Rules Tab">
+    In Firebase Console Realtime Database, click the **Rules** tab
+  </Step>
+  
+  <Step title="Edit Rules">
+    Replace the test mode rules with your production rules
+  </Step>
+  
+  <Step title="Publish">
+    Click **Publish** to apply the new rules
+  </Step>
+</Steps>
+
+## Testing Firebase Connection
+
+Verify that your app can successfully connect to Firebase.
+
+<Steps>
+  <Step title="Build the Project">
+    In Android Studio, click **Build > Make Project** or use `Ctrl+F9` (Windows/Linux) / `Cmd+F9` (Mac)
+  </Step>
+  
+  <Step title="Run the App">
+    Click the **Run** button (▶) or use `Shift+F10` to launch the app on an emulator or connected device
+  </Step>
+  
+  <Step title="Check Network Connection">
+    Ensure your test device/emulator has internet connectivity
+  </Step>
+  
+  <Step title="Verify Data Loading">
+    The app should display categories from your Firebase database on the main screen
+    
+    If you see "Algo ha fallado" (Something failed), check the Logcat output for errors
+  </Step>
+  
+  <Step title="Monitor Firebase Console">
+    In Firebase Console, go to **Realtime Database > Usage** to see connection activity
+  </Step>
+</Steps>
+
+## Troubleshooting Firebase Issues
+
+### google-services.json Not Found
+
+**Error:** `File google-services.json is missing`
+
+**Solution:**
+- Verify the file is in `app/` directory, not `app/src/`
+- Check the filename is exactly `google-services.json` (lowercase, no spaces)
+- Re-sync Gradle after adding the file
+
+### Package Name Mismatch
+
+**Error:** `No matching client found for package name 'com.example.huelvapedia'`
+
+**Solution:**
+- Verify the package name in Firebase Console matches `com.example.huelvapedia`
+- Check `applicationId` in `app/build.gradle:11` is correct
+- Re-download `google-services.json` if you modified the Firebase app settings
+
+### Database Permission Denied
+
+**Error:** `DatabaseError: Permission denied` in Logcat
+
+**Solution:**
+- Check your security rules allow read access
+- For testing, use test mode rules (`.read: true`)
+- Ensure the database URL is correct in `google-services.json`
+
+### No Data Appears in App
+
+**Problem:** App runs but shows empty screen
+
+**Solution:**
+- Verify data exists in Firebase Console under the "principal" node
+- Check device/emulator has internet connection
+- Look for errors in Logcat related to `FirebaseDatabase`
+- Verify database structure matches the expected schema
+
+### Build Fails After Adding google-services.json
+
+**Problem:** Gradle sync or build fails
+
+**Solution:**
+- Ensure Google Services plugin is in project `build.gradle:9`
+- Verify plugin is applied in `app/build.gradle:3`
+- Try **File > Invalidate Caches / Restart** in Android Studio
+- Check that Firebase dependency version matches: `firebase-database:19.7.0`
+
+## Firebase Console Features
+
+Familiarize yourself with key Firebase Console features:
+
+<CardGroup cols={2}>
+  <Card title="Realtime Database" icon="database">
+    View and edit data in real-time. Changes reflect immediately in connected apps.
+  </Card>
+  
+  <Card title="Usage Analytics" icon="chart-line">
+    Monitor database reads, writes, and bandwidth usage.
+  </Card>
+  
+  <Card title="Rules" icon="shield">
+    Configure security rules to control data access.
+  </Card>
+  
+  <Card title="Backups" icon="clock-rotate-left">
+    Export database JSON for backups (manual in free tier).
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+With Firebase fully configured, you're ready to develop!
+
+<CardGroup cols={2}>
+  <Card title="Installation Guide" icon="download" href="/development/installation">
+    Complete installation and build instructions
+  </Card>
+  
+  <Card title="Architecture Overview" icon="sitemap" href="/architecture/overview">
+    Understand the app's architecture and how Firebase integrates
+  </Card>
+</CardGroup>
+
+<Tip>
+  **Pro Tip:** Use Firebase Console's export feature to regularly backup your database content. Go to **Data** tab, click the **⋮** menu, and select **Export JSON**.
+</Tip>

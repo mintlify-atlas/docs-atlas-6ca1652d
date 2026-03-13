@@ -1,0 +1,274 @@
+---
+title: "Gradle Configuration"
+description: "Complete guide to HuelvaPedia's Gradle build configuration, dependencies, and SDK settings"
+---
+
+## Overview
+
+HuelvaPedia uses Gradle as its build system with Android Gradle Plugin and Google Services integration. This guide covers all build configurations, dependencies, and SDK version requirements defined in `app/build.gradle`.
+
+## Build Configuration
+
+### Plugins
+
+The application uses two essential Gradle plugins:
+
+```groovy app/build.gradle
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+}
+```
+
+<CardGroup cols={2}>
+  <Card title="Android Application" icon="android">
+    Provides Android app build capabilities and APK generation
+  </Card>
+  <Card title="Google Services" icon="google">
+    Enables Firebase integration and Google Play Services
+  </Card>
+</CardGroup>
+
+## Android SDK Configuration
+
+### SDK Versions
+
+HuelvaPedia targets Android devices running API level 27 and above:
+
+```groovy app/build.gradle
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
+
+    defaultConfig {
+        applicationId "com.example.huelvapedia"
+        minSdkVersion 27
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+}
+```
+
+<Note>
+  **API Level 27** corresponds to Android 8.1 (Oreo), ensuring compatibility with modern Android features while maintaining broad device support.
+</Note>
+
+### Version Configuration Breakdown
+
+| Setting | Value | Description |
+|---------|-------|-------------|
+| `compileSdkVersion` | 30 | Android 11 SDK used for compilation |
+| `buildToolsVersion` | 30.0.3 | Build tools version for compilation |
+| `minSdkVersion` | 27 | Minimum Android 8.1 (Oreo) required |
+| `targetSdkVersion` | 30 | Optimized for Android 11 behavior |
+| `versionCode` | 1 | Internal version number |
+| `versionName` | "1.0" | User-visible version string |
+| `applicationId` | com.example.huelvapedia | Unique app identifier |
+
+## Build Types
+
+### Release Configuration
+
+```groovy app/build.gradle
+buildTypes {
+    release {
+        minifyEnabled false
+        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+    }
+}
+```
+
+<Warning>
+  Code minification is currently **disabled** (`minifyEnabled false`). Consider enabling it for production releases to reduce APK size and obfuscate code.
+</Warning>
+
+**ProGuard Configuration:**
+- Uses default Android optimization rules: `proguard-android-optimize.txt`
+- Custom rules defined in: `proguard-rules.pro`
+
+## Java Compatibility
+
+```groovy app/build.gradle
+compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+}
+```
+
+<Info>
+  The project uses **Java 8** language features, enabling lambda expressions, method references, and streams API.
+</Info>
+
+## Dependencies
+
+### Core Dependencies
+
+HuelvaPedia uses a comprehensive set of AndroidX and third-party libraries:
+
+<Tabs>
+  <Tab title="AndroidX Libraries">
+    ```groovy app/build.gradle
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.material:material:1.3.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    ```
+
+    **Library Breakdown:**
+    - **AppCompat 1.2.0**: Backward compatibility for modern Android features
+    - **Material 1.3.0**: Material Design components and theming
+    - **ConstraintLayout 2.0.4**: Flexible responsive layouts
+    - **Legacy Support v4**: Support for fragments and other legacy APIs
+    - **CardView 1.0.0**: Material Design card components
+  </Tab>
+
+  <Tab title="Networking">
+    ```groovy app/build.gradle
+    implementation 'com.android.volley:volley:1.2.1'
+    ```
+
+    **Volley 1.2.1**: Google's HTTP library for networking and API requests.
+
+    <Card title="Use Cases" icon="network-wired">
+      - Weather API integration
+      - Firebase data synchronization
+      - Image URL loading
+    </Card>
+  </Tab>
+
+  <Tab title="Image Loading">
+    ```groovy app/build.gradle
+    implementation 'com.squareup.picasso:picasso:2.8'
+    ```
+
+    **Picasso 2.8**: Square's powerful image downloading and caching library.
+
+    <Tip>
+      Picasso handles all image loading in HuelvaPedia with automatic memory and disk caching.
+    </Tip>
+  </Tab>
+
+  <Tab title="Firebase">
+    ```groovy app/build.gradle
+    implementation 'com.google.firebase:firebase-database:19.7.0'
+    ```
+
+    **Firebase Realtime Database 19.7.0**: Cloud-hosted NoSQL database for storing Huelva encyclopedia content.
+  </Tab>
+
+  <Tab title="Testing">
+    ```groovy app/build.gradle
+    testImplementation 'junit:junit:4.+'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    ```
+
+    **Testing Framework:**
+    - **JUnit 4**: Unit testing framework
+    - **AndroidX Test JUnit 1.1.2**: Android-specific JUnit extensions
+    - **Espresso 3.3.0**: UI testing framework
+  </Tab>
+</Tabs>
+
+### Local Dependencies
+
+```groovy app/build.gradle
+implementation fileTree(dir: 'libs', include: ['*.jar'])
+```
+
+Includes all JAR files from the `libs` directory for local library dependencies.
+
+## Complete Dependencies List
+
+All dependencies with their exact versions:
+
+```groovy app/build.gradle
+dependencies {
+    // Local libraries
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    
+    // Image loading
+    implementation 'com.squareup.picasso:picasso:2.8'
+    
+    // AndroidX UI components
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    
+    // Networking
+    implementation 'com.android.volley:volley:1.2.1'
+    
+    // Core AndroidX libraries
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.material:material:1.3.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    
+    // Firebase
+    implementation 'com.google.firebase:firebase-database:19.7.0'
+    
+    // Testing
+    testImplementation 'junit:junit:4.+'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+}
+```
+
+## Namespace Configuration
+
+```groovy app/build.gradle
+namespace 'com.example.huelvapedia'
+```
+
+Defines the package namespace for generated R and BuildConfig classes.
+
+## Dependency Summary
+
+<CardGroup cols={3}>
+  <Card title="UI Libraries" icon="palette">
+    5 AndroidX UI components for modern Material Design interfaces
+  </Card>
+  <Card title="Networking" icon="wifi">
+    Volley for HTTP requests and Picasso for image loading
+  </Card>
+  <Card title="Backend" icon="database">
+    Firebase Realtime Database for cloud data storage
+  </Card>
+</CardGroup>
+
+## Upgrading Dependencies
+
+To update dependencies to their latest versions:
+
+<Steps>
+  <Step title="Check for Updates">
+    Use Android Studio's dependency analyzer:
+    ```bash
+    ./gradlew dependencyUpdates
+    ```
+  </Step>
+  
+  <Step title="Update Version Numbers">
+    Modify version numbers in `app/build.gradle` and sync the project.
+  </Step>
+  
+  <Step title="Test Thoroughly">
+    Run all tests to ensure compatibility:
+    ```bash
+    ./gradlew test
+    ./gradlew connectedAndroidTest
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Always test the app thoroughly after updating dependencies, especially major version updates that may introduce breaking changes.
+</Warning>
+
+## Related Documentation
+
+- [Android Manifest Configuration](/development/manifest) - App permissions and activities
+- [Architecture Overview](/architecture/overview) - App structure and design patterns
+- [Firebase Integration](/features/firebase-integration) - Database operations and data sync

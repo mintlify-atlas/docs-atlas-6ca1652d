@@ -1,0 +1,481 @@
+---
+title: 'PantallaCarga'
+description: 'Splash screen with connectivity checking and animated branding'
+icon: 'spinner'
+---
+
+## Overview
+
+`PantallaCarga` is the splash screen activity that serves as the entry point for HuelvaPedia. It displays branding animations, checks internet connectivity, and automatically navigates to MainActivity after a delay if connectivity is available.
+
+**Package:** `com.example.huelvapedia`
+
+**Extends:** `AppCompatActivity`
+
+## Class Purpose
+
+- Displays the app's splash screen with animated logo and branding
+- Verifies internet connectivity before proceeding
+- Monitors network changes if initially disconnected
+- Provides smooth transition to the main application
+- Prevents app usage without an active internet connection
+
+## Constants
+
+<ParamField path="DURACION_CARGA" type="int" default="5000">
+  Duration in milliseconds (5 seconds) before navigating to MainActivity after connectivity is confirmed
+</ParamField>
+
+## Fields
+
+<ParamField path="animacionSuperior" type="Animation">
+  Animation applied to the logo, loaded from R.anim.top_animation
+</ParamField>
+
+<ParamField path="animacionInferior" type="Animation">
+  Animation applied to text and progress bar elements, loaded from R.anim.bottom_animation
+</ParamField>
+
+<ParamField path="imagenLogo" type="ImageView">
+  ImageView displaying the app logo
+</ParamField>
+
+<ParamField path="textoCarga" type="TextView">
+  TextView displaying the loading text
+</ParamField>
+
+<ParamField path="sloganCarga" type="TextView">
+  TextView displaying the app slogan
+</ParamField>
+
+<ParamField path="progressBar" type="ProgressBar">
+  Indeterminate progress bar indicating loading state
+</ParamField>
+
+<ParamField path="hayConexion" type="boolean" default="true">
+  Flag tracking current connectivity status
+</ParamField>
+
+<ParamField path="monitorizando" type="boolean" default="false">
+  Flag indicating if network callback is currently registered
+</ParamField>
+
+<ParamField path="handler" type="Handler">
+  Handler for posting delayed navigation to MainActivity
+</ParamField>
+
+<ParamField path="navegarAPrincipal" type="Runnable">
+  Runnable that navigates to MainActivity and finishes the splash screen
+</ParamField>
+
+<ParamField path="connectivityCallback" type="ConnectivityManager.NetworkCallback">
+  Callback monitoring network availability changes
+</ParamField>
+
+## Lifecycle Methods
+
+### onCreate()
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState)
+```
+
+Initializes the splash screen, configures UI elements, applies animations, and checks connectivity.
+
+**Implementation:**
+
+```java
+super.onCreate(savedInstanceState);
+getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+setContentView(R.layout.activity_pantalla_carga);
+getSupportActionBar().hide();
+
+animacionSuperior = AnimationUtils.loadAnimation(this, R.anim.top_animation);
+animacionInferior = AnimationUtils.loadAnimation(this, R.anim.bottom_animation);
+
+imagenLogo = findViewById(R.id.imagenlogo);
+textoCarga = findViewById(R.id.textocarga);
+sloganCarga = findViewById(R.id.slogancarga);
+progressBar = findViewById(R.id.progressBar);
+
+progressBar.getIndeterminateDrawable().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+
+imagenLogo.setAnimation(animacionSuperior);
+textoCarga.setAnimation(animacionInferior);
+sloganCarga.setAnimation(animacionInferior);
+progressBar.setAnimation(animacionInferior);
+
+checkConnectivity();
+```
+
+**Operations performed:**
+1. Enables fullscreen mode for immersive experience
+2. Sets layout to `activity_pantalla_carga`
+3. Hides the ActionBar for clean branding
+4. Loads top and bottom animations from resources
+5. Initializes UI components
+6. Colors the progress bar white
+7. Applies animations to logo, text, slogan, and progress bar
+8. Initiates connectivity check
+
+### onPause()
+
+```java
+@Override
+protected void onPause()
+```
+
+Unregisters the network callback if monitoring is active to prevent memory leaks.
+
+**Implementation:**
+
+```java
+if (monitorizando) {
+    final ConnectivityManager connectivityManager
+            = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    connectivityManager.unregisterNetworkCallback(connectivityCallback);
+    monitorizando = false;
+}
+super.onPause();
+```
+
+### onDestroy()
+
+```java
+@Override
+protected void onDestroy()
+```
+
+Cancels all pending handler callbacks to prevent memory leaks.
+
+**Implementation:**
+
+```java
+handler.removeCallbacksAndMessages(null); // Cancela callbacks pendientes para evitar memory leaks
+super.onDestroy();
+```
+
+## Connectivity Management
+
+### checkConnectivity()
+
+```java
+private void checkConnectivity()
+```
+
+Checks initial network connectivity and either proceeds to MainActivity or starts monitoring for connection.
+
+**Implementation:**
+
+```java
+final ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+final NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+
+hayConexion = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+
+if (hayConexion)
+{
+    handler.postDelayed(navegarAPrincipal, DURACION_CARGA);
+}
+else
+{
+    Toast.makeText(PantallaCarga.this, "SE DEBE DISPONER DE CONEXIÓN A INTERNET", Toast.LENGTH_LONG).show();
+    connectivityManager.registerNetworkCallback(
+            new NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build(), connectivityCallback);
+    monitorizando = true;
+}
+```
+
+**Behavior:**
+- Gets the system's ConnectivityManager
+- Checks if an active network connection exists
+- **If connected:** Schedules navigation to MainActivity after 5 seconds
+- **If not connected:** Shows warning toast and registers network callback to monitor for connectivity
+
+## Runnables and Callbacks
+
+### navegarAPrincipal Runnable
+
+Handles navigation to MainActivity:
+
+```java
+private final Runnable navegarAPrincipal = () -> {
+    Intent intent = new Intent(PantallaCarga.this, MainActivity.class);
+    startActivity(intent);
+    finish();
+};
+```
+
+**Actions:**
+1. Creates Intent for MainActivity
+2. Starts MainActivity
+3. Finishes PantallaCarga to remove it from back stack
+
+### connectivityCallback
+
+Monitors network state changes:
+
+```java
+private final ConnectivityManager.NetworkCallback connectivityCallback = new ConnectivityManager.NetworkCallback()
+{
+    @Override
+    public void onAvailable(Network network)
+    {
+        hayConexion = true;
+        handler.postDelayed(navegarAPrincipal, DURACION_CARGA);
+    }
+
+    @Override
+    public void onLost(Network network)
+    {
+        hayConexion = false;
+        Toast.makeText(PantallaCarga.this, "SE DEBE DISPONER DE CONEXIÓN A INTERNET", Toast.LENGTH_LONG).show();
+    }
+};
+```
+
+**Methods:**
+- `onAvailable()`: Called when network becomes available, schedules navigation to MainActivity
+- `onLost()`: Called when network is lost, shows warning toast
+
+## Animation Configuration
+
+### Animation Resources
+
+```java
+animacionSuperior = AnimationUtils.loadAnimation(this, R.anim.top_animation);
+animacionInferior = AnimationUtils.loadAnimation(this, R.anim.bottom_animation);
+```
+
+### Applying Animations
+
+```java
+imagenLogo.setAnimation(animacionSuperior);        // Logo animates from top
+textoCarga.setAnimation(animacionInferior);        // Loading text animates from bottom
+sloganCarga.setAnimation(animacionInferior);       // Slogan animates from bottom
+progressBar.setAnimation(animacionInferior);       // Progress bar animates from bottom
+```
+
+## UI Customization
+
+### Fullscreen Mode
+
+```java
+getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
+                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
+```
+
+Removes status bar for immersive splash screen experience.
+
+### Progress Bar Styling
+
+```java
+progressBar.getIndeterminateDrawable().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+```
+
+Colors the progress bar white to match the branding theme.
+
+### ActionBar Removal
+
+```java
+getSupportActionBar().hide();
+```
+
+Hides the action bar for clean, distraction-free splash screen.
+
+## Flow Diagram
+
+<Steps>
+  <Step title="App Launch">
+    PantallaCarga activity starts as the launcher activity
+  </Step>
+  <Step title="UI Setup">
+    Configures fullscreen mode, loads animations, initializes views
+  </Step>
+  <Step title="Animation">
+    Plays entrance animations for logo, text, and progress bar
+  </Step>
+  <Step title="Connectivity Check">
+    Checks if device has internet connection
+  </Step>
+  <Step title="Connected Path">
+    If connected: Wait 5 seconds → Navigate to MainActivity
+  </Step>
+  <Step title="Disconnected Path">
+    If not connected: Show toast → Register network callback → Wait for connection
+  </Step>
+  <Step title="Connection Restored">
+    When network becomes available: Wait 5 seconds → Navigate to MainActivity
+  </Step>
+  <Step title="Cleanup">
+    Unregister callbacks, remove handlers, finish activity
+  </Step>
+</Steps>
+
+## Memory Management
+
+The activity implements proper memory management:
+
+1. **Handler cleanup in onDestroy():**
+   ```java
+   handler.removeCallbacksAndMessages(null);
+   ```
+
+2. **Callback unregistration in onPause():**
+   ```java
+   if (monitorizando) {
+       connectivityManager.unregisterNetworkCallback(connectivityCallback);
+       monitorizando = false;
+   }
+   ```
+
+3. **Activity finish after navigation:**
+   ```java
+   finish(); // Removes PantallaCarga from back stack
+   ```
+
+## Code Example: Complete Activity
+
+```java
+package com.example.huelvapedia;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
+import android.net.NetworkRequest;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class PantallaCarga extends AppCompatActivity {
+
+    private static final int DURACION_CARGA = 5000;
+
+    private Animation animacionSuperior, animacionInferior;
+    private ImageView imagenLogo;
+    private TextView textoCarga, sloganCarga;
+    private ProgressBar progressBar;
+
+    private boolean hayConexion = true;
+    private boolean monitorizando = false;
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
+    private final Runnable navegarAPrincipal = () -> {
+        Intent intent = new Intent(PantallaCarga.this, MainActivity.class);
+        startActivity(intent);
+        finish();
+    };
+
+    private final ConnectivityManager.NetworkCallback connectivityCallback = new ConnectivityManager.NetworkCallback()
+    {
+        @Override
+        public void onAvailable(Network network)
+        {
+            hayConexion = true;
+            handler.postDelayed(navegarAPrincipal, DURACION_CARGA);
+        }
+
+        @Override
+        public void onLost(Network network)
+        {
+            hayConexion = false;
+            Toast.makeText(PantallaCarga.this, "SE DEBE DISPONER DE CONEXIÓN A INTERNET", Toast.LENGTH_LONG).show();
+        }
+    };
+
+    private void checkConnectivity()
+    {
+        final ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        final NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+
+        hayConexion = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+
+        if (hayConexion)
+        {
+            handler.postDelayed(navegarAPrincipal, DURACION_CARGA);
+        }
+        else
+        {
+            Toast.makeText(PantallaCarga.this, "SE DEBE DISPONER DE CONEXIÓN A INTERNET", Toast.LENGTH_LONG).show();
+            connectivityManager.registerNetworkCallback(
+                    new NetworkRequest.Builder()
+                            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                            .build(), connectivityCallback);
+            monitorizando = true;
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        setContentView(R.layout.activity_pantalla_carga);
+        getSupportActionBar().hide();
+
+        animacionSuperior = AnimationUtils.loadAnimation(this, R.anim.top_animation);
+        animacionInferior = AnimationUtils.loadAnimation(this, R.anim.bottom_animation);
+
+        imagenLogo = findViewById(R.id.imagenlogo);
+        textoCarga = findViewById(R.id.textocarga);
+        sloganCarga = findViewById(R.id.slogancarga);
+        progressBar = findViewById(R.id.progressBar);
+
+        progressBar.getIndeterminateDrawable().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+
+        imagenLogo.setAnimation(animacionSuperior);
+        textoCarga.setAnimation(animacionInferior);
+        sloganCarga.setAnimation(animacionInferior);
+        progressBar.setAnimation(animacionInferior);
+
+        checkConnectivity();
+    }
+
+    @Override
+    protected void onPause() {
+        if (monitorizando) {
+            final ConnectivityManager connectivityManager
+                    = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            connectivityManager.unregisterNetworkCallback(connectivityCallback);
+            monitorizando = false;
+        }
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        handler.removeCallbacksAndMessages(null);
+        super.onDestroy();
+    }
+}
+```
+
+## Dependencies
+
+- **Android ConnectivityManager:** Network state monitoring
+- **Android Handler:** Delayed task execution
+- **Animation Framework:** Loading animations
+- **AppCompat:** Modern activity features
+
+## Related Classes
+
+- [MainActivity](/api/mainactivity) - Destination after splash screen
+- Animation resources: `R.anim.top_animation`, `R.anim.bottom_animation`
+- Layout: `R.layout.activity_pantalla_carga`

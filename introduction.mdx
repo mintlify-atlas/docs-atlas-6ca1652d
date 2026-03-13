@@ -1,0 +1,118 @@
+---
+title: "Welcome to HuelvaPedia"
+description: "A digital encyclopedia for Huelva, Spain - showcasing the cultural, historical, and geographical richness of the region"
+---
+
+<img
+  className="block"
+  src="https://media.brand.dev/288cc7c4-5cef-4376-950b-bdf0083eedae.png"
+  alt="HuelvaPedia Logo"
+  style={{ maxWidth: '200px', margin: '0 auto 2rem' }}
+/>
+
+## About HuelvaPedia
+
+HuelvaPedia is an informative Android application designed to showcase the province and city of Huelva, Spain. Built with Java and powered by Firebase Realtime Database, it provides users with a rich, categorized exploration of Huelva's history, gastronomy, landmarks, and more.
+
+<CardGroup cols={2}>
+  <Card title="Cloud-Based Data" icon="cloud">
+    All content is fetched dynamically from Firebase Realtime Database, ensuring information stays current without requiring app updates
+  </Card>
+  <Card title="Material Design UI" icon="mobile">
+    Clean and intuitive Android interface utilizing Material Design components for a seamless user experience
+  </Card>
+  <Card title="Weather Integration" icon="cloud-sun">
+    Real-time weather information for Huelva powered by OpenWeatherMap API
+  </Card>
+  <Card title="Interactive Content" icon="map-location-dot">
+    Direct actions for locations, phone calls, and web links to explore Huelva's points of interest
+  </Card>
+</CardGroup>
+
+## Key Features
+
+<AccordionGroup>
+  <Accordion title="Cloud-Based Architecture" icon="database">
+    HuelvaPedia leverages Firebase Realtime Database to store and retrieve all encyclopedic content. This cloud-based approach ensures:
+    - Data is always up-to-date without requiring app updates
+    - Minimal local storage footprint
+    - Scalable content management through Firebase Console
+  </Accordion>
+
+  <Accordion title="Categorized Browsing" icon="list">
+    Navigate through multiple categories including:
+    - Historical landmarks and monuments
+    - Local gastronomy and traditional dishes
+    - Points of interest and tourist attractions
+    - Cultural events and traditions
+  </Accordion>
+
+  <Accordion title="Weather Information" icon="temperature-half">
+    Stay informed with real-time weather data:
+    - Current temperature and conditions
+    - Thermal sensation
+    - Humidity and atmospheric pressure
+    - Wind speed and cloud coverage
+  </Accordion>
+
+  <Accordion title="Interactive Actions" icon="hand-pointer">
+    Engage with content through direct actions:
+    - Open locations in maps (Google Maps, etc.)
+    - Initiate phone calls to establishments
+    - Visit related websites and resources
+  </Accordion>
+</AccordionGroup>
+
+## Tech Stack
+
+HuelvaPedia is built with modern Android development technologies:
+
+- **Language:** Java
+- **Minimum SDK:** API 27 (Android 8.1 - Oreo)
+- **Target SDK:** API 30 (Android 11)
+- **Database:** Firebase Realtime Database
+- **Network:** Android Volley for API requests
+- **Image Loading:** Picasso library
+- **UI:** AndroidX, Material Design, ConstraintLayout, CardView
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get the app running in minutes with our quick start guide
+  </Card>
+  <Card title="Setup Guide" icon="gear" href="/development/installation">
+    Detailed installation and configuration instructions
+  </Card>
+  <Card title="Architecture" icon="diagram-project" href="/architecture/overview">
+    Understand the app's architecture and design patterns
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/mainactivity">
+    Explore the complete API documentation
+  </Card>
+</CardGroup>
+
+## Requirements
+
+<Note>
+  **Internet Connection Required:** HuelvaPedia requires an active internet connection to function, as all content is hosted in the cloud via Firebase.
+</Note>
+
+- Android Studio (Electric Eel or newer recommended)
+- Android SDK (API 30+)
+- Java JDK 11 or higher
+- Minimum Android Device: Android 8.1 (Oreo)
+- Firebase project with Realtime Database configured
+
+## Open Source
+
+HuelvaPedia is open source and available on GitHub. Contributions are welcome!
+
+<Card
+  title="View on GitHub"
+  icon="github"
+  href="https://github.com/JuancaCalvino/HuelvaPedia"
+  horizontal
+>
+  Explore the source code, report issues, or contribute to the project
+</Card>

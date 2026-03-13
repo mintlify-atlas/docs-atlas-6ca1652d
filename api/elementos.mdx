@@ -1,0 +1,325 @@
+---
+title: 'Elementos'
+description: 'Data model class representing encyclopedia entries with location, contact, and metadata'
+---
+
+## Overview
+
+The `Elementos` class is the primary data model for HuelvaPedia entries. It stores all information about encyclopedia items including text content, images, location data, contact information, and navigation metadata.
+
+<Note>
+This class follows the JavaBean pattern with private fields and public getter/setter methods for data encapsulation.
+</Note>
+
+## Package
+
+```java
+com.example.huelvapedia
+```
+
+## Class Declaration
+
+```java
+public class Elementos
+```
+
+## Fields
+
+All fields are private and accessed through getter/setter methods:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `nombre` | `String` | The name or title of the encyclopedia entry |
+| `foto` | `String` | URL or path to the entry's image |
+| `descripcion` | `String` | Descriptive text about the entry |
+| `ubicacion1` | `String` | First part of the location URL (base maps URL) |
+| `ubicacion2` | `String` | Second part of the location URL (encoded address) |
+| `telefono` | `String` | Contact phone number for the entry |
+| `ultimo` | `Boolean` | Flag indicating if this is a terminal/leaf entry (no sub-items) |
+| `enlace` | `String` | External web link for additional information |
+
+## Constructors
+
+### Default Constructor
+
+```java
+public Elementos()
+```
+
+Creates an empty `Elementos` object with all fields set to `null`.
+
+**Usage Example:**
+```java
+Elementos elemento = new Elementos();
+elemento.setNombre("Plaza de las Monjas");
+elemento.setDescripcion("Historic square in central Huelva");
+```
+
+### Full Constructor
+
+```java
+public Elementos(String nombre, String foto, String descripcion, 
+                 String ubicacion1, String ubicacion2, String telefono, 
+                 Boolean ultimo, String enlace)
+```
+
+Creates an `Elementos` object with all fields initialized.
+
+**Parameters:**
+- `nombre` - The entry name
+- `foto` - Image URL
+- `descripcion` - Entry description
+- `ubicacion1` - Maps URL base
+- `ubicacion2` - Location address
+- `telefono` - Contact phone number
+- `ultimo` - Whether this is a terminal entry
+- `enlace` - External reference link
+
+**Usage Example:**
+```java
+Elementos monumento = new Elementos(
+    "Catedral de Huelva",
+    "https://example.com/catedral.jpg",
+    "Catedral de estilo barroco del siglo XVIII",
+    "geo:0,0?q=",
+    "Plaza de la Merced, Huelva",
+    "+34959240512",
+    true,
+    "https://es.wikipedia.org/wiki/Catedral_de_Huelva"
+);
+```
+
+## Methods
+
+### Getter Methods
+
+<AccordionGroup>
+<Accordion title="getNombre()">
+```java
+public String getNombre()
+```
+Returns the entry name.
+
+**Returns:** `String` - The name of the encyclopedia entry
+</Accordion>
+
+<Accordion title="getFoto()">
+```java
+public String getFoto()
+```
+Returns the image URL.
+
+**Returns:** `String` - URL or path to the entry's photo
+</Accordion>
+
+<Accordion title="getDescripcion()">
+```java
+public String getDescripcion()
+```
+Returns the entry description.
+
+**Returns:** `String` - Descriptive text about the entry
+</Accordion>
+
+<Accordion title="getUbicacion1()">
+```java
+public String getUbicacion1()
+```
+Returns the first part of the location URL.
+
+**Returns:** `String` - Base URL for maps integration
+</Accordion>
+
+<Accordion title="getUbicacion2()">
+```java
+public String getUbicacion2()
+```
+Returns the second part of the location URL.
+
+**Returns:** `String` - Address component for maps query
+</Accordion>
+
+<Accordion title="getTelefono()">
+```java
+public String getTelefono()
+```
+Returns the contact phone number.
+
+**Returns:** `String` - Phone number for the entry
+</Accordion>
+
+<Accordion title="getUltimo()">
+```java
+public Boolean getUltimo()
+```
+Returns whether this is a terminal entry.
+
+**Returns:** `Boolean` - `true` if this entry has no sub-items, `false` if it leads to more content
+</Accordion>
+
+<Accordion title="getEnlace()">
+```java
+public String getEnlace()
+```
+Returns the external web link.
+
+**Returns:** `String` - URL to external reference (e.g., Wikipedia)
+</Accordion>
+</AccordionGroup>
+
+### Setter Methods
+
+<AccordionGroup>
+<Accordion title="setNombre(String)">
+```java
+public void setNombre(String nombre)
+```
+Sets the entry name.
+
+**Parameters:**
+- `nombre` - The name to assign
+</Accordion>
+
+<Accordion title="setFoto(String)">
+```java
+public void setFoto(String foto)
+```
+Sets the image URL.
+
+**Parameters:**
+- `foto` - The photo URL to assign
+</Accordion>
+
+<Accordion title="setDescripcion(String)">
+```java
+public void setDescripcion(String descripcion)
+```
+Sets the entry description.
+
+**Parameters:**
+- `descripcion` - The description text to assign
+</Accordion>
+
+<Accordion title="setUbicacion1(String)">
+```java
+public void setUbicacion1(String ubicacion1)
+```
+Sets the base location URL.
+
+**Parameters:**
+- `ubicacion1` - The base maps URL
+</Accordion>
+
+<Accordion title="setUbicacion2(String)">
+```java
+public void setUbicacion2(String ubicacion2)
+```
+Sets the location address.
+
+**Parameters:**
+- `ubicacion2` - The address for maps query
+</Accordion>
+
+<Accordion title="setTelefono(String)">
+```java
+public void setTelefono(String telefono)
+```
+Sets the contact phone number.
+
+**Parameters:**
+- `telefono` - The phone number to assign
+</Accordion>
+
+<Accordion title="setUltimo(Boolean)">
+```java
+public void setUltimo(Boolean ultimo)
+```
+Sets the terminal entry flag.
+
+**Parameters:**
+- `ultimo` - `true` if this is a leaf node, `false` otherwise
+</Accordion>
+
+<Accordion title="setEnlace(String)">
+```java
+public void setEnlace(String enlace)
+```
+Sets the external web link.
+
+**Parameters:**
+- `enlace` - The external URL to assign
+</Accordion>
+</AccordionGroup>
+
+## Usage Patterns
+
+### Creating Entries with Optional Fields
+
+```java
+// Entry without location or contact info
+Elementos historia = new Elementos();
+historia.setNombre("Historia de Huelva");
+historia.setDescripcion("Descubre el pasado de la ciudad");
+historia.setFoto("https://example.com/historia.jpg");
+historia.setUltimo(false); // Has sub-entries
+
+// Terminal entry with full contact info
+Elementos museo = new Elementos();
+museo.setNombre("Museo de Huelva");
+museo.setDescripcion("Museo provincial de arte y arqueología");
+museo.setFoto("https://example.com/museo.jpg");
+museo.setUbicacion1("geo:0,0?q=");
+museo.setUbicacion2("Alameda Sundheim, 13, Huelva");
+museo.setTelefono("+34959650424");
+museo.setEnlace("https://www.museosdeandalucia.es/web/museodehuelva");
+museo.setUltimo(true); // No sub-entries
+```
+
+### Integration with Firebase
+
+```java
+// Reading from Firebase
+FirebaseDatabase database = FirebaseDatabase.getInstance();
+DatabaseReference ref = database.getReference("monumentos");
+
+ref.addValueEventListener(new ValueEventListener() {
+    @Override
+    public void onDataChange(DataSnapshot snapshot) {
+        for (DataSnapshot data : snapshot.getChildren()) {
+            Elementos elemento = data.getValue(Elementos.class);
+            // Use the elemento object
+        }
+    }
+    
+    @Override
+    public void onCancelled(DatabaseError error) {
+        // Handle error
+    }
+});
+```
+
+## Field Usage Guidelines
+
+<CardGroup cols={2}>
+<Card title="Location Fields" icon="map-marker">
+Both `ubicacion1` and `ubicacion2` should be set together. They combine to form a complete maps URI that can be opened in any maps application.
+</Card>
+
+<Card title="Ultimo Flag" icon="flag">
+Set to `true` for terminal entries that display action buttons (map, call, web). Set to `false` for category entries that navigate to sub-items.
+</Card>
+
+<Card title="Optional Fields" icon="circle-question">
+`telefono`, `ubicacion1/2`, and `enlace` can be `null`. The UI will automatically hide corresponding action buttons.
+</Card>
+
+<Card title="Required Fields" icon="circle-check">
+`nombre`, `foto`, and `descripcion` should always be populated for proper display in the RecyclerView.
+</Card>
+</CardGroup>
+
+## See Also
+
+- [Adaptador](/api/adaptador) - RecyclerView adapter that displays Elementos objects
+- [MainActivity](/api/mainactivity) - Main activity using this data model
+- [Firebase Integration](/features/firebase-integration) - How Elementos maps to Firebase structure

@@ -1,0 +1,222 @@
+---
+title: Prerequisites
+description: Everything you need before starting HuelvaPedia development
+---
+
+Before you begin developing HuelvaPedia, ensure your development environment meets all the necessary requirements. This page covers all prerequisites needed to build and run the application.
+
+## Development Environment
+
+### Android Studio
+
+HuelvaPedia requires Android Studio for development. The recommended version is **Electric Eel or newer**.
+
+<Steps>
+  <Step title="Download Android Studio">
+    Visit the [Android Studio download page](https://developer.android.com/studio) and download the latest stable version for your operating system.
+  </Step>
+  
+  <Step title="Install Android Studio">
+    Follow the installation wizard and ensure all recommended components are installed, including:
+    - Android SDK
+    - Android SDK Platform
+    - Android Virtual Device
+  </Step>
+  
+  <Step title="Verify Installation">
+    Launch Android Studio and complete the initial setup wizard to download any required SDK components.
+  </Step>
+</Steps>
+
+## SDK Requirements
+
+HuelvaPedia is built with specific Android SDK versions to ensure compatibility and leverage modern Android features.
+
+<CardGroup cols={2}>
+  <Card title="Minimum SDK" icon="mobile">
+    **API Level 27** (Android 8.1 Oreo)
+    
+    The app will run on devices with Android 8.1 and above.
+  </Card>
+  
+  <Card title="Target SDK" icon="bullseye">
+    **API Level 30** (Android 11)
+    
+    Optimized for Android 11 features and behavior.
+  </Card>
+  
+  <Card title="Compile SDK" icon="hammer">
+    **API Level 30**
+    
+    Development uses Android 11 SDK for compilation.
+  </Card>
+  
+  <Card title="Build Tools" icon="wrench">
+    **Version 30.0.3**
+    
+    Required for building and packaging the app.
+  </Card>
+</CardGroup>
+
+### Installing Android SDK
+
+The required SDK versions will typically be installed automatically by Android Studio during Gradle sync. However, you can manually verify or install them:
+
+<Steps>
+  <Step title="Open SDK Manager">
+    In Android Studio, go to `Tools > SDK Manager`
+  </Step>
+  
+  <Step title="Select SDK Platforms">
+    Under the "SDK Platforms" tab, ensure **Android 11.0 (R)** API Level 30 is installed
+  </Step>
+  
+  <Step title="Select SDK Tools">
+    Under the "SDK Tools" tab, ensure **Android SDK Build-Tools 30.0.3** is installed
+  </Step>
+  
+  <Step title="Apply Changes">
+    Click "Apply" to download and install any missing components
+  </Step>
+</Steps>
+
+## Java Development Kit
+
+HuelvaPedia requires Java Development Kit (JDK) for compilation.
+
+<Note>
+  **Required:** Java JDK 11 or higher
+  
+  The project uses Java 8 language features (sourceCompatibility and targetCompatibility set to VERSION_1_8), but Gradle requires JDK 11+ to run.
+</Note>
+
+### Verifying Your JDK
+
+Check your installed JDK version:
+
+```bash Terminal
+java -version
+```
+
+You should see output similar to:
+```
+java version "11.0.x" or higher
+```
+
+### Installing JDK
+
+If you need to install or update JDK:
+
+<Tabs>
+  <Tab title="Windows">
+    1. Download JDK 11 or higher from [Oracle](https://www.oracle.com/java/technologies/downloads/) or [Adoptium](https://adoptium.net/)
+    2. Run the installer and follow the setup wizard
+    3. Add the JDK `bin` directory to your system PATH
+  </Tab>
+  
+  <Tab title="macOS">
+    Using Homebrew:
+    ```bash
+    brew install openjdk@11
+    ```
+    
+    Or download directly from [Oracle](https://www.oracle.com/java/technologies/downloads/) or [Adoptium](https://adoptium.net/)
+  </Tab>
+  
+  <Tab title="Linux">
+    Using apt (Ubuntu/Debian):
+    ```bash
+    sudo apt update
+    sudo apt install openjdk-11-jdk
+    ```
+    
+    Using yum (Fedora/RHEL):
+    ```bash
+    sudo yum install java-11-openjdk-devel
+    ```
+  </Tab>
+</Tabs>
+
+## Internet Connection Requirement
+
+<Warning>
+  **Critical Requirement:** An active internet connection is mandatory for HuelvaPedia to function.
+</Warning>
+
+HuelvaPedia is a cloud-based application that fetches all content dynamically from Firebase Realtime Database. The app requires internet connectivity for:
+
+- **Initial data loading** - Fetching categories and content from Firebase
+- **Real-time updates** - Receiving updated information without app updates
+- **Image loading** - Downloading images via Picasso library
+- **Weather data** - Fetching current weather information using Volley API calls
+
+The app declares these permissions in `AndroidManifest.xml`:
+
+```xml app/src/main/AndroidManifest.xml
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+```
+
+### Testing Internet Connectivity
+
+When developing:
+- **Physical devices** should have mobile data or Wi-Fi enabled
+- **Emulators** automatically use the host machine's internet connection
+- Ensure firewall settings don't block Android Studio or the emulator
+
+## Additional Tools
+
+### Git Version Control
+
+Git is required to clone the repository:
+
+```bash Verify Git installation
+git --version
+```
+
+If not installed, download from [git-scm.com](https://git-scm.com/downloads).
+
+### Gradle
+
+<Info>
+  Gradle will be automatically downloaded and managed by the Gradle Wrapper included in the project. No manual installation required.
+</Info>
+
+The project uses:
+- **Gradle Build Tool:** 7.4.2
+- **Google Services Plugin:** 4.3.15
+
+## Hardware Requirements
+
+### Minimum Development System Requirements
+
+- **RAM:** 8 GB minimum (16 GB recommended)
+- **Disk Space:** 8 GB minimum for Android Studio, SDK, and emulator
+- **Screen Resolution:** 1280 x 800 minimum
+- **Processor:** Multi-core processor (Intel i5 or equivalent recommended)
+
+### Target Device Requirements
+
+- **Minimum Android Version:** 8.1 (API 27)
+- **Screen Sizes:** Small and Normal screen sizes supported
+- **Screen Densities:** ldpi, mdpi, hdpi, xhdpi
+
+## Firebase Account
+
+<Tip>
+  You'll need a free Google/Firebase account to set up the backend database. See the [Firebase Setup](/development/firebase-setup) guide for detailed instructions.
+</Tip>
+
+## Next Steps
+
+Once you've verified all prerequisites are met, proceed to:
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/development/installation">
+    Clone the repository and set up the project in Android Studio
+  </Card>
+  
+  <Card title="Firebase Setup" icon="fire" href="/development/firebase-setup">
+    Configure Firebase backend for cloud data storage
+  </Card>
+</CardGroup>

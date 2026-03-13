@@ -1,0 +1,770 @@
+---
+title: 'Data Model'
+description: 'Complete documentation of the Elementos class structure, Firebase database schema, and data modeling patterns in HuelvaPedia'
+icon: 'database'
+---
+
+## Overview
+
+HuelvaPedia's data model centers around the **Elementos** class, which represents individual encyclopedia entries (monuments, beaches, restaurants, etc.). This class serves as both a Plain Old Java Object (POJO) and a Firebase-compatible data transfer object.
+
+<CardGroup cols={3}>
+  <Card title="8 Fields" icon="table">
+    Each entry contains 8 properties for comprehensive information
+  </Card>
+  <Card title="Firebase Compatible" icon="fire">
+    Automatic serialization/deserialization with Firebase
+  </Card>
+  <Card title="Flexible Structure" icon="puzzle-piece">
+    Supports both categories and terminal entries
+  </Card>
+</CardGroup>
+
+## Elementos Class
+
+The `Elementos` class is the core data model for all encyclopedia entries.
+
+### Class Definition
+
+```java Elementos.java:3-11
+public class Elementos { //Clase destinada a almacenar los elementos que componen cada tema
+    private String nombre;
+    private String foto;
+    private String descripcion;
+    private String ubicacion1;
+    private String ubicacion2;
+    private String telefono;
+    private Boolean ultimo;
+    private String enlace;
+```
+
+### Field Reference
+
+<Tabs>
+  <Tab title="Core Fields">
+    | Field | Type | Description | Example |
+    |-------|------|-------------|----------|
+    | `nombre` | `String` | Display name of the entry | `"Catedral de Huelva"` |
+    | `foto` | `String` | URL to the entry's image | `"https://firebase.../image.jpg"` |
+    | `descripcion` | `String` | Brief description text | `"Historic 16th century cathedral..."` |
+  </Tab>
+  <Tab title="Location Fields">
+    | Field | Type | Description | Example |
+    |-------|------|-------------|----------|
+    | `ubicacion1` | `String` | Map URL base (optional) | `"geo:0,0?q="` |
+    | `ubicacion2` | `String` | Address or coordinates (optional) | `"Plaza de la Merced, Huelva"` |
+    
+    <Info>
+      **Combined Usage**: `ubicacion1` and `ubicacion2` are concatenated to form a complete map URL. If both are `null`, the location button is hidden.
+    </Info>
+  </Tab>
+  <Tab title="Action Fields">
+    | Field | Type | Description | Example |
+    |-------|------|-------------|----------|
+    | `telefono` | `String` | Contact phone number (optional) | `"+34 959 123 456"` |
+    | `enlace` | `String` | External link URL (optional) | `"https://es.wikipedia.org/wiki/..."` |
+    | `ultimo` | `Boolean` | Indicates if this is a terminal entry | `true` or `false` |
+    
+    <Warning>
+      The `ultimo` field controls navigation behavior:
+      - `false`: Item is clickable and navigates to `Secundaria` with subcategories
+      - `true`: Item displays action buttons (map, call, link) instead of navigation
+    </Warning>
+  </Tab>
+</Tabs>
+
+### Constructors
+
+<CodeGroup>
+```java Empty Constructor:13-14
+public Elementos() { //Constructor vacio
+}
+```
+
+```java Full Constructor:16-25
+public Elementos(String nombre, String foto, String descripcion, String ubicacion1, String ubicacion2, String telefono, Boolean ultimo, String enlace) {
+    this.nombre = nombre;
+    this.foto = foto;
+    this.descripcion = descripcion;
+    this.ubicacion1 = ubicacion1;
+    this.ubicacion2 = ubicacion2;
+    this.telefono = telefono;
+    this.ultimo = ultimo;
+    this.enlace = enlace;
+}
+```
+</CodeGroup>
+
+<Info>
+  **Firebase Requirement**: The empty constructor is **required** for Firebase Realtime Database to deserialize JSON data into Java objects. Without it, Firebase cannot instantiate the class.
+</Info>
+
+### Getters and Setters
+
+The class follows JavaBean conventions with complete getter/setter pairs:
+
+<CodeGroup>
+```java String Fields:29-59
+public String getNombre() {
+    return nombre;
+}
+
+public void setNombre(String nombre) {
+    this.nombre = nombre;
+}
+
+public String getFoto() {
+    return foto;
+}
+
+public void setFoto(String foto) {
+    this.foto = foto;
+}
+
+public String getDescripcion() {
+    return descripcion;
+}
+
+public void setDescripcion(String descripcion) {
+    this.descripcion = descripcion;
+}
+
+// ubicacion1, ubicacion2, telefono, enlace follow same pattern
+```
+
+```java Boolean Field:77-81
+public Boolean getUltimo() { 
+    return ultimo; 
+}
+
+public void setUltimo(Boolean ultimo) {
+    this.ultimo = ultimo;
+}
+```
+</CodeGroup>
+
+<Tip>
+  Firebase uses these getter/setter methods during serialization and deserialization. Method names must match Firebase field names (e.g., `getNombre()` maps to `"nombre"` in the database).
+</Tip>
+
+## Firebase Database Schema
+
+### Hierarchical Structure
+
+HuelvaPedia uses a two-level hierarchy in Firebase Realtime Database:
+
+```
+root/
+├── principal/              # Top-level categories
+│   ├── item-001
+│   │   ├── nombre: "Playas"
+│   │   ├── foto: "https://..."
+│   │   ├── descripcion: "Beautiful beaches..."
+│   │   ├── ubicacion1: null
+│   │   ├── ubicacion2: null
+│   │   ├── telefono: null
+│   │   ├── ultimo: false
+│   │   └── enlace: null
+│   ├── item-002
+│   │   ├── nombre: "Monumentos"
+│   │   └── ...
+│   └── item-003
+│       ├── nombre: "Restaurantes"
+│       └── ...
+│
+├── playas/                 # Subcategory (normalized from "Playas")
+│   ├── beach-001
+│   │   ├── nombre: "Playa de Punta Umbría"
+│   │   ├── foto: "https://..."
+│   │   ├── descripcion: "Golden sand beach..."
+│   │   ├── ubicacion1: "geo:0,0?q="
+│   │   ├── ubicacion2: "Punta Umbría, Huelva"
+│   │   ├── telefono: "+34 959 123 456"
+│   │   ├── ultimo: true
+│   │   └── enlace: "https://..."
+│   └── beach-002
+│       ├── nombre: "Playa de Mazagón"
+│       └── ...
+│
+├── monumentos/             # Subcategory (normalized from "Monumentos")
+│   ├── monument-001
+│   │   ├── nombre: "Catedral de la Merced"
+│   │   └── ...
+│   └── monument-002
+│       └── ...
+│
+└── [other categories]/     # Additional normalized categories
+    └── ...
+```
+
+### Category Normalization
+
+When navigating from `MainActivity` to `Secundaria`, the category name is normalized:
+
+```java Secundaria.java:49-53
+Intent intent = getIntent();
+String nombreReferencia = intent.getStringExtra("Nombre")
+        .replace(" ", "")
+        .toLowerCase();
+```
+
+**Examples:**
+- `"Playas"` → `"playas"`
+- `"Monumentos Históricos"` → `"monumentoshistóricos"`
+- `"Vida Nocturna"` → `"vidanocturna"`
+
+<Warning>
+  Firebase path names must match the normalized format exactly. When creating new categories in Firebase, ensure the child node name is lowercase with spaces removed.
+</Warning>
+
+## Data Serialization
+
+### From Firebase to Java
+
+Firebase automatically deserializes JSON into `Elementos` objects:
+
+```java MainActivity.java:58-59
+Elementos elemento = dataSnapshot.getValue(Elementos.class);
+listaElementos.add(elemento);
+```
+
+**Firebase JSON:**
+```json
+{
+  "item-001": {
+    "nombre": "Catedral de la Merced",
+    "foto": "https://firebasestorage.googleapis.com/.../cathedral.jpg",
+    "descripcion": "Majestic 16th century cathedral in central Huelva",
+    "ubicacion1": "geo:0,0?q=",
+    "ubicacion2": "Plaza de la Merced, 21003 Huelva",
+    "telefono": "+34 959 245 615",
+    "ultimo": true,
+    "enlace": "https://es.wikipedia.org/wiki/Catedral_de_Huelva"
+  }
+}
+```
+
+**Resulting Java Object:**
+```java
+Elementos elemento = new Elementos(
+    "Catedral de la Merced",
+    "https://firebasestorage.googleapis.com/.../cathedral.jpg",
+    "Majestic 16th century cathedral in central Huelva",
+    "geo:0,0?q=",
+    "Plaza de la Merced, 21003 Huelva",
+    "+34 959 245 615",
+    true,
+    "https://es.wikipedia.org/wiki/Catedral_de_Huelva"
+);
+```
+
+### Null Handling
+
+Firebase fields can be `null` if not present in the database. The adapter handles this gracefully:
+
+```java Adaptador.java:50-52
+boolean tieneUbicacion = elemento.getUbicacion1() != null && elemento.getUbicacion2() != null;
+boolean tieneTelefono = elemento.getTelefono() != null;
+boolean tieneEnlace = elemento.getEnlace() != null;
+```
+
+<Tip>
+  **Optional Fields**: Set optional fields to `null` in Firebase to save storage. The app will automatically hide corresponding action buttons when fields are `null`.
+</Tip>
+
+## Data Usage Patterns
+
+### Pattern 1: Category Entries (ultimo = false)
+
+Category entries link to subcategories and don't display action buttons.
+
+**Firebase Data:**
+```json
+{
+  "nombre": "Playas",
+  "foto": "https://.../beaches-category.jpg",
+  "descripcion": "Discover Huelva's beautiful Atlantic beaches",
+  "ubicacion1": null,
+  "ubicacion2": null,
+  "telefono": null,
+  "ultimo": false,
+  "enlace": null
+}
+```
+
+**UI Behavior:**
+- Displays name, photo, and description
+- Hides all action buttons
+- Entire item is clickable
+- Navigates to `Secundaria` with "playas" reference
+
+**Adapter Code:**
+```java Adaptador.java:54-67
+if (!elemento.getUltimo()) {
+    holder.botonUbicacion.setVisibility(View.GONE);
+    holder.botonLlamar.setVisibility(View.GONE);
+    holder.botonEnlace.setVisibility(View.GONE);
+
+    if (!tieneUbicacion && !tieneTelefono && !tieneEnlace)
+    {
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), Secundaria.class);
+            intent.putExtra("Nombre", elemento.getNombre());
+            v.getContext().startActivity(intent);
+        });
+    }
+}
+```
+
+### Pattern 2: Terminal Entries (ultimo = true)
+
+Terminal entries represent actual encyclopedia items with actionable information.
+
+**Firebase Data:**
+```json
+{
+  "nombre": "Playa de Mazagón",
+  "foto": "https://.../mazagon-beach.jpg",
+  "descripcion": "Expansive golden sand beach with clear waters and excellent facilities",
+  "ubicacion1": "geo:0,0?q=",
+  "ubicacion2": "Playa de Mazagón, 21130 Mazagón, Huelva",
+  "telefono": "+34 959 376 200",
+  "ultimo": true,
+  "enlace": "https://turismohuelva.org/mazagon"
+}
+```
+
+**UI Behavior:**
+- Displays name, photo, and description
+- Shows **"Ver ubicación"** button (opens map with location)
+- Shows **"Llamar"** button (opens dialer with phone number)
+- Shows **"Ver fauna"** button (opens web link)
+- Item is NOT clickable for navigation
+
+**Adapter Code:**
+```java Adaptador.java:69-113
+else // Es el último elemento, solo permite pulsar botones de acción
+{
+    // Botón de ubicación (mapa)
+    if (tieneUbicacion) {
+        holder.botonUbicacion.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(elemento.getUbicacion1() + Uri.encode(elemento.getUbicacion2())));
+            Intent chooser = Intent.createChooser(intent, "Launch Maps");
+            v.getContext().startActivity(chooser);
+        });
+    } else {
+        holder.botonUbicacion.setVisibility(View.GONE);
+    }
+
+    // Botón de teléfono (llamar)
+    if (tieneTelefono) {
+        holder.botonLlamar.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_DIAL);
+            intent.setData(Uri.parse("tel:" + elemento.getTelefono()));
+            v.getContext().startActivity(intent);
+        });
+    } else {
+        holder.botonLlamar.setVisibility(View.GONE);
+    }
+
+    // Botón de enlace (web)
+    if (tieneEnlace) {
+        holder.botonEnlace.setOnClickListener(v -> {
+            Uri link = Uri.parse(elemento.getEnlace());
+            Intent intent = new Intent(Intent.ACTION_VIEW, link);
+            v.getContext().startActivity(intent);
+        });
+    } else {
+        holder.botonEnlace.setVisibility(View.GONE);
+    }
+}
+```
+
+### Pattern 3: Partial Terminal Entries
+
+Terminal entries with only some action fields populated.
+
+**Firebase Data:**
+```json
+{
+  "nombre": "Museo de Huelva",
+  "foto": "https://.../museum.jpg",
+  "descripcion": "Archaeological and fine arts museum",
+  "ubicacion1": "geo:0,0?q=",
+  "ubicacion2": "Alameda Sundheim, 13, Huelva",
+  "telefono": null,
+  "ultimo": true,
+  "enlace": "https://www.museosdeandalucia.es/web/museodehuelva"
+}
+```
+
+**UI Behavior:**
+- Shows **"Ver ubicación"** button (location provided)
+- **Hides** "Llamar" button (no phone number)
+- Shows **"Ver fauna"** button (link provided)
+
+<Info>
+  The adapter intelligently shows/hides buttons based on field availability, creating a clean UI without empty or disabled buttons.
+</Info>
+
+## Image Handling
+
+The `foto` field stores image URLs, typically from Firebase Storage.
+
+### Picasso Integration
+
+```java Adaptador.java:48
+Picasso.get().load(elemento.getFoto()).into(holder.imagen);
+```
+
+### Image URL Format
+
+**Firebase Storage URLs:**
+```
+https://firebasestorage.googleapis.com/v0/b/[project-id].appspot.com/o/images%2Fcathedral.jpg?alt=media&token=[token]
+```
+
+**External URLs (also supported):**
+```
+https://example.com/images/beach.jpg
+```
+
+<Tip>
+  **Best Practices:**
+  - Use Firebase Storage for hosting images to leverage CDN benefits
+  - Optimize images before upload (recommended max width: 1200px)
+  - Use JPEG format for photographs, PNG for graphics with transparency
+  - Firebase Storage automatically generates download URLs with authentication tokens
+</Tip>
+
+## Location Data Format
+
+### Map Intent Construction
+
+The location fields are combined to create a map intent:
+
+```java Adaptador.java:76
+intent.setData(Uri.parse(elemento.getUbicacion1() + Uri.encode(elemento.getUbicacion2())));
+```
+
+### Supported Location Formats
+
+<Tabs>
+  <Tab title="Address Search">
+    **ubicacion1:** `"geo:0,0?q="`
+    
+    **ubicacion2:** `"Plaza de la Merced, Huelva"`
+    
+    **Result:** `geo:0,0?q=Plaza%20de%20la%20Merced%2C%20Huelva`
+    
+    Opens map app with address search
+  </Tab>
+  <Tab title="Coordinates">
+    **ubicacion1:** `"geo:"`
+    
+    **ubicacion2:** `"37.2573,-6.9493"`
+    
+    **Result:** `geo:37.2573,-6.9493`
+    
+    Opens map app at exact coordinates
+  </Tab>
+  <Tab title="Labeled Point">
+    **ubicacion1:** `"geo:0,0?q="`
+    
+    **ubicacion2:** `"37.2573,-6.9493(Catedral de Huelva)"`
+    
+    **Result:** `geo:0,0?q=37.2573%2C-6.9493%28Catedral%20de%20Huelva%29`
+    
+    Opens map with labeled marker
+  </Tab>
+</Tabs>
+
+<Warning>
+  **URL Encoding**: `ubicacion2` is automatically URL-encoded using `Uri.encode()`. Store human-readable text in Firebase; encoding happens at runtime.
+</Warning>
+
+## Phone Number Format
+
+### Dialer Intent
+
+```java Adaptador.java:90-93
+holder.botonLlamar.setOnClickListener(v -> {
+    Intent intent = new Intent(Intent.ACTION_DIAL);
+    intent.setData(Uri.parse("tel:" + elemento.getTelefono()));
+    v.getContext().startActivity(intent);
+});
+```
+
+### Recommended Phone Formats
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| **International** | `+34 959 123 456` | Preferred format with country code |
+| **National** | `959 123 456` | Works within Spain |
+| **With Parentheses** | `+34 (959) 123-456` | Also supported |
+
+<Info>
+  **ACTION_DIAL vs ACTION_CALL**: The app uses `ACTION_DIAL`, which opens the dialer with the number pre-filled but doesn't automatically initiate the call. This avoids requiring the `CALL_PHONE` permission.
+</Info>
+
+## Link Handling
+
+The `enlace` field stores URLs for external resources.
+
+### Supported URL Schemes
+
+```java Adaptador.java:103-107
+holder.botonEnlace.setOnClickListener(v -> {
+    Uri link = Uri.parse(elemento.getEnlace());
+    Intent intent = new Intent(Intent.ACTION_VIEW, link);
+    v.getContext().startActivity(intent);
+});
+```
+
+**Supported schemes:**
+- `http://` and `https://` (web pages)
+- `tel:` (phone numbers)
+- `mailto:` (email addresses)
+- `geo:` (map locations)
+
+**Example URLs:**
+```
+https://es.wikipedia.org/wiki/Huelva
+https://turismohuelva.org/
+https://www.tripadvisor.com/...
+```
+
+## Data Validation
+
+### Required Fields
+
+<CardGroup cols={2}>
+  <Card title="Always Required" icon="asterisk">
+    - `nombre` (String)
+    - `foto` (String URL)
+    - `descripcion` (String)
+    - `ultimo` (Boolean)
+  </Card>
+  <Card title="Conditionally Required" icon="circle-question">
+    - `ubicacion1` + `ubicacion2` (both or neither)
+    - `telefono` (optional)
+    - `enlace` (optional)
+  </Card>
+</CardGroup>
+
+### Validation Rules
+
+<Steps>
+  <Step title="Name Validation">
+    - Must not be empty
+    - Used for display and Firebase reference normalization
+    - Avoid special characters that might break normalization
+  </Step>
+  <Step title="Photo URL Validation">
+    - Must be a valid HTTP/HTTPS URL
+    - Image should be accessible without authentication (or use Firebase Storage tokens)
+    - Recommended image dimensions: 800x600 to 1200x900
+  </Step>
+  <Step title="Location Validation">
+    - If `ubicacion1` is set, `ubicacion2` must also be set
+    - Together they must form a valid `geo:` URI
+  </Step>
+  <Step title="Boolean Validation">
+    - `ultimo` must be explicitly `true` or `false` (not null)
+    - Controls entire navigation flow
+  </Step>
+</Steps>
+
+## Database Access Patterns
+
+### Reading Main Categories
+
+```java MainActivity.java:48
+reference = FirebaseDatabase.getInstance().getReference().child("principal");
+```
+
+**Path:** `/principal`
+
+**Returns:** All top-level category entries
+
+### Reading Subcategories
+
+```java Secundaria.java:51-55
+Intent intent = getIntent();
+String nombreReferencia = intent.getStringExtra("Nombre")
+        .replace(" ", "")
+        .toLowerCase();
+reference = FirebaseDatabase.getInstance().getReference().child(nombreReferencia);
+```
+
+**Example Paths:**
+- `/playas` (from "Playas")
+- `/monumentos` (from "Monumentos")
+- `/restaurantes` (from "Restaurantes")
+
+**Returns:** All entries within that category
+
+### Real-time Updates
+
+Firebase automatically pushes updates to all connected clients:
+
+```java MainActivity.java:50-63
+reference.addValueEventListener(new ValueEventListener() {
+    @Override
+    public void onDataChange(@NonNull DataSnapshot snapshot) {
+        listaElementos.clear();
+        for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+            Elementos elemento = dataSnapshot.getValue(Elementos.class);
+            listaElementos.add(elemento);
+        }
+        adaptador = new Adaptador(MainActivity.this, listaElementos);
+        recyclerView.setAdapter(adaptador);
+    }
+    // ...
+});
+```
+
+**Behavior:**
+- `onDataChange()` fires immediately with current data
+- `onDataChange()` fires again whenever data changes on the server
+- List is cleared before repopulating to avoid duplicates
+
+## Example Data Set
+
+Here's a complete example showing a category and its subcategories:
+
+<CodeGroup>
+```json /principal/playas
+{
+  "nombre": "Playas",
+  "foto": "https://firebasestorage.googleapis.com/.../beaches-hero.jpg",
+  "descripcion": "Explora las magníficas playas de Huelva en el Atlántico",
+  "ubicacion1": null,
+  "ubicacion2": null,
+  "telefono": null,
+  "ultimo": false,
+  "enlace": null
+}
+```
+
+```json /playas/mazagon
+{
+  "nombre": "Playa de Mazagón",
+  "foto": "https://firebasestorage.googleapis.com/.../mazagon.jpg",
+  "descripcion": "Amplia playa de arena dorada con aguas cristalinas y excelentes instalaciones. Ideal para familias.",
+  "ubicacion1": "geo:0,0?q=",
+  "ubicacion2": "Playa de Mazagón, 21130 Mazagón, Huelva",
+  "telefono": "+34 959 376 200",
+  "ultimo": true,
+  "enlace": "https://turismohuelva.org/mazagon"
+}
+```
+
+```json /playas/puntaumbria
+{
+  "nombre": "Playa de Punta Umbría",
+  "foto": "https://firebasestorage.googleapis.com/.../punta-umbria.jpg",
+  "descripcion": "Playa urbana con todos los servicios, paseo marítimo y zona de restaurantes.",
+  "ubicacion1": "geo:0,0?q=",
+  "ubicacion2": "37.1833,-6.9667",
+  "telefono": null,
+  "ultimo": true,
+  "enlace": "https://www.puntaumbria.es/turismo/"
+}
+```
+</CodeGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Consistent Naming" icon="text">
+    Use consistent naming conventions for category normalization. Avoid special characters and accents in category names.
+  </Card>
+  <Card title="Image Optimization" icon="image">
+    Compress images before uploading to Firebase Storage. Target 200-500 KB per image for balance between quality and loading speed.
+  </Card>
+  <Card title="Null Safety" icon="shield-halved">
+    Always set `ultimo` explicitly. Leave action fields as `null` rather than empty strings if not applicable.
+  </Card>
+  <Card title="URL Validation" icon="link">
+    Test all URLs (photos, links) before adding to Firebase to ensure they're accessible and load correctly.
+  </Card>
+  <Card title="Phone Format" icon="phone">
+    Use international format with country code (+34 for Spain) for better compatibility.
+  </Card>
+  <Card title="Location Testing" icon="map-location-dot">
+    Verify map intents work correctly by testing `ubicacion1` + `ubicacion2` combinations before deployment.
+  </Card>
+</CardGroup>
+
+## Extending the Data Model
+
+To add new fields to the `Elementos` class:
+
+<Steps>
+  <Step title="Add Field to Class">
+    ```java
+    private String nuevoCampo;
+    ```
+  </Step>
+  <Step title="Create Getter/Setter">
+    ```java
+    public String getNuevoCampo() { return nuevocamp; }
+    public void setNuevocamp(String nuevoCampo) { this.nuevocamp = nuevoCampo; }
+    ```
+  </Step>
+  <Step title="Update Constructor">
+    Add parameter to the full constructor if needed
+  </Step>
+  <Step title="Update Firebase Data">
+    Add the new field to existing entries in Firebase (or leave as `null` for optional fields)
+  </Step>
+  <Step title="Update UI Logic">
+    Modify `Adaptador.onBindViewHolder()` to handle the new field
+  </Step>
+</Steps>
+
+<Warning>
+  Firebase will automatically ignore fields in the database that don't exist in the Java class, and will set Java fields to `null` if they don't exist in the database. Ensure backward compatibility when modifying the data model.
+</Warning>
+
+## Performance Optimization
+
+### Data Loading Strategy
+
+- **Lazy Loading**: Firebase only loads the requested path (`principal` or specific category)
+- **Incremental Updates**: ValueEventListener receives only changed data after initial load
+- **Local Caching**: Firebase SDK caches data locally for offline access
+
+### Memory Management
+
+```java
+listaElementos.clear(); // Clear list before repopulating
+```
+
+This prevents memory leaks by ensuring old `Elementos` objects are garbage collected when Firebase sends updates.
+
+### Image Caching
+
+Picasso automatically caches images:
+- **Memory cache**: Recently viewed images stay in RAM
+- **Disk cache**: Downloaded images persist across app restarts
+- **Automatic eviction**: Caches are cleared based on LRU (Least Recently Used) policy
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture Overview" icon="diagram-project" href="/architecture/overview">
+    Learn how Elementos fits into the overall app architecture
+  </Card>
+  <Card title="Firebase Setup" icon="fire" href="/development/firebase-setup">
+    Configure Firebase Realtime Database with sample data
+  </Card>
+  <Card title="Adaptador Class" icon="table-list" href="/api/adaptador">
+    Learn about the RecyclerView adapter implementation
+  </Card>
+  <Card title="Firebase Integration" icon="database" href="/features/firebase-integration">
+    Deep dive into Firebase data fetching patterns
+  </Card>
+</CardGroup>

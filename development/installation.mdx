@@ -1,0 +1,342 @@
+---
+title: Installation
+description: Step-by-step guide to install and configure HuelvaPedia in your development environment
+---
+
+This guide walks you through the complete process of cloning the HuelvaPedia repository and setting it up in Android Studio. By the end of this guide, you'll have the project ready for development.
+
+<Note>
+  Before proceeding, ensure you've completed all [Prerequisites](/development/prerequisites) including installing Android Studio, Android SDK, and Java JDK.
+</Note>
+
+## Clone the Repository
+
+First, clone the HuelvaPedia repository from GitHub to your local machine.
+
+<Steps>
+  <Step title="Open Terminal or Command Prompt">
+    Navigate to the directory where you want to store the project:
+    
+    ```bash
+    cd ~/projects  # or your preferred directory
+    ```
+  </Step>
+  
+  <Step title="Clone the Repository">
+    Execute the git clone command:
+    
+    ```bash
+    git clone https://github.com/JuancaCalvino/HuelvaPedia.git
+    ```
+    
+    This will create a `HuelvaPedia` directory with all project files.
+  </Step>
+  
+  <Step title="Verify the Clone">
+    Navigate into the cloned directory:
+    
+    ```bash
+    cd HuelvaPedia
+    ```
+    
+    List the contents to verify:
+    
+    ```bash
+    ls -la
+    ```
+    
+    You should see files including `build.gradle`, `settings.gradle`, and an `app/` directory.
+  </Step>
+</Steps>
+
+## Open Project in Android Studio
+
+Now that the repository is cloned, open it in Android Studio.
+
+<Steps>
+  <Step title="Launch Android Studio">
+    Open Android Studio. If you see the welcome screen, click **Open**. If you have another project open, go to `File > Open...`
+  </Step>
+  
+  <Step title="Navigate to Project Directory">
+    Browse to the location where you cloned HuelvaPedia and select the **HuelvaPedia** folder (the root directory containing `build.gradle`).
+    
+    Click **OK** or **Open** to proceed.
+  </Step>
+  
+  <Step title="Trust the Project">
+    Android Studio may ask if you trust the project. Click **Trust Project** to continue.
+  </Step>
+  
+  <Step title="Wait for Indexing">
+    Android Studio will begin indexing the project files. This may take a few moments. You'll see progress in the bottom status bar.
+  </Step>
+</Steps>
+
+<Warning>
+  At this stage, the Gradle sync will **fail** because the `google-services.json` file is missing. This is expected and will be resolved in the Firebase Setup step.
+</Warning>
+
+## Understanding the Project Structure
+
+Before proceeding, familiarize yourself with the project structure:
+
+```plaintext Project Structure
+HuelvaPedia/
+├── app/
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/example/huelvapedia/
+│   │   │   │   ├── MainActivity.java
+│   │   │   │   ├── Secundaria.java
+│   │   │   │   ├── PantallaCarga.java
+│   │   │   │   ├── Elementos.java
+│   │   │   │   ├── Adaptador.java
+│   │   │   │   └── ApiTiempo/
+│   │   │   │       └── Tiempo.java
+│   │   │   ├── res/
+│   │   │   └── AndroidManifest.xml
+│   │   ├── test/
+│   │   └── androidTest/
+│   ├── build.gradle (Module-level)
+│   └── google-services.json (Missing - to be added)
+├── build.gradle (Project-level)
+├── settings.gradle
+└── gradle/
+```
+
+<Info>
+  The `google-services.json` file is intentionally excluded from version control for security reasons. You'll create this file in the [Firebase Setup](/development/firebase-setup) guide.
+</Info>
+
+## Gradle Sync Process
+
+Once you have the `google-services.json` file in place (covered in the next guide), Android Studio will perform a Gradle sync to download dependencies and configure the build environment.
+
+### Understanding Gradle Sync
+
+Gradle sync is the process where Android Studio:
+1. Reads the build configuration files (`build.gradle`)
+2. Downloads required dependencies and libraries
+3. Configures the project structure
+4. Prepares the project for building and running
+
+### What Gets Downloaded
+
+During the first Gradle sync, the following dependencies will be downloaded:
+
+<Tabs>
+  <Tab title="Firebase & Google">
+    ```gradle app/build.gradle
+    implementation 'com.google.firebase:firebase-database:19.7.0'
+    ```
+    Firebase Realtime Database SDK for cloud data storage
+  </Tab>
+  
+  <Tab title="AndroidX & UI">
+    ```gradle app/build.gradle
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.material:material:1.3.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    ```
+    Modern Android UI components and Material Design
+  </Tab>
+  
+  <Tab title="Networking & Images">
+    ```gradle app/build.gradle
+    implementation 'com.android.volley:volley:1.2.1'
+    implementation 'com.squareup.picasso:picasso:2.8'
+    ```
+    - **Volley:** HTTP library for API requests (weather data)
+    - **Picasso:** Image loading and caching library
+  </Tab>
+  
+  <Tab title="Testing">
+    ```gradle app/build.gradle
+    testImplementation 'junit:junit:4.+'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    ```
+    Unit testing and instrumentation testing libraries
+  </Tab>
+</Tabs>
+
+### Build Configuration Details
+
+The project's build configuration (from `app/build.gradle`):
+
+```gradle app/build.gradle
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
+
+    defaultConfig {
+        applicationId "com.example.huelvapedia"
+        minSdkVersion 27
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    namespace 'com.example.huelvapedia'
+}
+```
+
+<CardGroup cols={2}>
+  <Card title="Application ID" icon="fingerprint">
+    `com.example.huelvapedia`
+    
+    **Important:** This must match your Firebase project's Android app package name
+  </Card>
+  
+  <Card title="Version" icon="tag">
+    v1.0 (versionCode: 1)
+    
+    Current release version of the application
+  </Card>
+  
+  <Card title="Java Version" icon="coffee">
+    Java 8 (VERSION_1_8)
+    
+    Uses Java 8 language features like lambdas
+  </Card>
+  
+  <Card title="Gradle Plugin" icon="puzzle-piece">
+    7.4.2 + Google Services 4.3.15
+    
+    Build tools and Firebase integration
+  </Card>
+</CardGroup>
+
+### Triggering Gradle Sync Manually
+
+If Gradle sync doesn't start automatically, or if you need to re-sync:
+
+<Tabs>
+  <Tab title="From Menu">
+    Go to `File > Sync Project with Gradle Files`
+  </Tab>
+  
+  <Tab title="From Toolbar">
+    Click the **Sync Project with Gradle Files** button (🐘 icon) in the toolbar
+  </Tab>
+  
+  <Tab title="From Notification">
+    If you see a notification banner saying "Gradle files have changed", click **Sync Now**
+  </Tab>
+</Tabs>
+
+## Troubleshooting Common Issues
+
+### Missing google-services.json
+
+<Warning>
+  **Error:** `File google-services.json is missing. The Google Services Plugin cannot function without it.`
+  
+  **Solution:** This is expected at this stage. Proceed to the [Firebase Setup](/development/firebase-setup) guide to create and add this file.
+</Warning>
+
+### Gradle Sync Timeout
+
+**Problem:** Gradle sync takes too long or times out
+
+**Solutions:**
+- Check your internet connection (dependencies must be downloaded)
+- Disable VPN if you're using one
+- Configure proxy settings if behind a corporate firewall
+- Increase Gradle memory in `gradle.properties`:
+  ```properties
+  org.gradle.jvmargs=-Xmx2048m
+  ```
+
+### SDK Version Not Found
+
+**Problem:** Error about missing SDK API Level 30
+
+**Solution:**
+1. Open SDK Manager: `Tools > SDK Manager`
+2. Under "SDK Platforms", check **Android 11.0 (R)**
+3. Under "SDK Tools", check **Android SDK Build-Tools 30.0.3**
+4. Click "Apply" to download and install
+
+### Build Tools Version Conflict
+
+**Problem:** Build tools version mismatch errors
+
+**Solution:** The project requires Build Tools 30.0.3:
+```gradle app/build.gradle
+buildToolsVersion "30.0.3"
+```
+
+Install it via SDK Manager if missing.
+
+## Verifying the Installation
+
+Once you have `google-services.json` in place and Gradle sync completes successfully:
+
+<Steps>
+  <Step title="Check Build Output">
+    Look at the "Build" tab at the bottom of Android Studio. You should see "BUILD SUCCESSFUL" with no errors.
+  </Step>
+  
+  <Step title="Verify Project Structure">
+    In the Project view (left sidebar), ensure all folders are properly recognized:
+    - `java` folder should be marked in green (source root)
+    - `res` folder should have the proper resource structure
+    - No red underlines in `build.gradle` files
+  </Step>
+  
+  <Step title="Check Dependencies">
+    Open `app/build.gradle` and verify that all dependencies are resolved (no red underlines)
+  </Step>
+</Steps>
+
+## Code Example: Main Activity Connection
+
+Here's how the app connects to Firebase in the main activity (from `MainActivity.java:48`):
+
+```java MainActivity.java
+reference = FirebaseDatabase.getInstance().getReference().child("principal");
+
+reference.addValueEventListener(new ValueEventListener()
+{
+    @Override
+    public void onDataChange(@NonNull DataSnapshot snapshot)
+    {
+        listaElementos.clear();
+        for (DataSnapshot dataSnapshot : snapshot.getChildren())
+        {
+            Elementos elemento = dataSnapshot.getValue(Elementos.class);
+            listaElementos.add(elemento);
+        }
+        adaptador = new Adaptador(MainActivity.this, listaElementos);
+        recyclerView.setAdapter(adaptador);
+    }
+
+    @Override
+    public void onCancelled(@NonNull DatabaseError error)
+    {
+        Toast.makeText(MainActivity.this, "Algo ha fallado", Toast.LENGTH_SHORT).show();
+    }
+});
+```
+
+This code demonstrates why Firebase configuration is essential - the app queries the "principal" node to populate the main category list.
+
+## Next Steps
+
+<Card title="Firebase Setup" icon="fire" href="/development/firebase-setup">
+  Complete the Firebase configuration to add the missing `google-services.json` file and set up the cloud database structure. This is **required** before you can build and run the app.
+</Card>
+
+<Tip>
+  After completing Firebase setup, return to Android Studio and trigger a Gradle sync to resolve all dependencies and prepare for building.
+</Tip>
