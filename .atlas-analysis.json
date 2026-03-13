@@ -1,0 +1,72 @@
+{
+  "projectType": "saas",
+  "projectName": "HuelvaPedia",
+  "projectDescription": "An informative Android app acting as a digital encyclopedia for Huelva, Spain",
+  "theme": "almond",
+  "primaryColor": "#94cb04",
+  "lightColor": "#545454",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Core Features",
+            "pages": ["features/firebase-integration", "features/weather-api", "features/navigation"]
+          },
+          {
+            "group": "Architecture",
+            "pages": ["architecture/overview", "architecture/data-model"]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Setup",
+            "pages": ["development/prerequisites", "development/installation", "development/firebase-setup"]
+          },
+          {
+            "group": "Configuration",
+            "pages": ["development/gradle-config", "development/manifest"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Activities",
+            "pages": ["api/mainactivity", "api/secundaria", "api/pantallacarga", "api/tiempo"]
+          },
+          {
+            "group": "Core Classes",
+            "pages": ["api/elementos", "api/adaptador"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Cloud-based data with Firebase Realtime Database",
+    "Real-time weather integration via OpenWeatherMap API",
+    "Categorized browsing of Huelva's history, gastronomy, and landmarks",
+    "Material Design UI with RecyclerView",
+    "Location, phone, and web link actions",
+    "Splash screen with connectivity checking"
+  ],
+  "publicApiSurface": [
+    "MainActivity",
+    "Secundaria",
+    "PantallaCarga",
+    "Tiempo",
+    "Elementos",
+    "Adaptador"
+  ]
+}
